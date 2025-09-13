@@ -1,11 +1,12 @@
 // script.js
 
-const APP_VERSION = "v1.9"; // バージョンアップ！
+const APP_VERSION = "v1.10"; // バージョンアップ！
 
 // --- HTML要素を取得 ---
-const appVersionSpan = document.getElementById('app-version'); // 変更
-const htmlVersionSpan = document.getElementById('html-version'); // 追加
-const csvVersionSpan = document.getElementById('csv-version');   // 追加
+const appVersionSpan = document.getElementById('app-version');
+const htmlVersionSpan = document.getElementById('html-version');
+const cssVersionSpan = document.getElementById('css-version');   // ▼▼▼ 追加 ▼▼▼
+const csvVersionSpan = document.getElementById('csv-version');
 // ... (他の要素取得は変更なし) ...
 const questionText = document.getElementById('question-text');
 const optionsContainer = document.getElementById('options-container');
@@ -21,36 +22,35 @@ const hintText = document.getElementById('hint-text');
 const hintBtn = document.getElementById('hint-btn');
 const nextBtn = document.getElementById('next-btn');
 
-
 // --- グローバル変数を定義 ---
 let quizData = [];
 let currentQuestionIndex = 0;
 let score = 0;
 let sessionResults = [];
 
-// ▼▼▼ ここから新しい関数を追加 ▼▼▼
 // --- ファイルの最終更新日時を取得して表示する関数 ---
 async function displayFileVersions() {
     appVersionSpan.textContent = `App: ${APP_VERSION}`;
     try {
-        // HEADリクエストを使い、ヘッダー情報だけを効率的に取得
         const htmlResponse = await fetch('index.html', { method: 'HEAD' });
+        const cssResponse = await fetch('style.css', { method: 'HEAD' }); // ▼▼▼ 追加 ▼▼▼
         const csvResponse = await fetch('quiz.csv', { method: 'HEAD' });
 
-        // Last-Modifiedヘッダーから日付を取得し、見やすい形式に変換
         const htmlLastModified = new Date(htmlResponse.headers.get('Last-Modified')).toLocaleString('ja-JP');
+        const cssLastModified = new Date(cssResponse.headers.get('Last-Modified')).toLocaleString('ja-JP'); // ▼▼▼ 追加 ▼▼▼
         const csvLastModified = new Date(csvResponse.headers.get('Last-Modified')).toLocaleString('ja-JP');
 
         htmlVersionSpan.textContent = `HTML: ${htmlLastModified}`;
+        cssVersionSpan.textContent = `CSS: ${cssLastModified}`; // ▼▼▼ 追加 ▼▼▼
         csvVersionSpan.textContent = `CSV: ${csvLastModified}`;
         
     } catch (error) {
         console.error("ファイルバージョンの取得に失敗:", error);
         htmlVersionSpan.textContent = "HTML: 取得失敗";
+        cssVersionSpan.textContent = "CSS: 取得失敗"; // ▼▼▼ 追加 ▼▼▼
         csvVersionSpan.textContent = "CSV: 取得失敗";
     }
 }
-// ▲▲▲ ここまで新しい関数 ▲▲▲
 
 // --- CSVファイルを読み込んで解析する関数 ---
 async function loadQuizData() {
@@ -83,12 +83,9 @@ async function loadQuizData() {
 
 // --- アプリケーションの初期化と開始 ---
 async function initializeApp() {
-    // ▼▼▼ 変更点 ▼▼▼
-    await displayFileVersions(); // ファイルバージョンの表示を待つ
-
+    await displayFileVersions(); 
     hintBtn.addEventListener('click', showHint);
     nextBtn.addEventListener('click', handleNextButtonClick);
-
     quizData = await loadQuizData();
     if (quizData.length > 0) {
         startQuiz();

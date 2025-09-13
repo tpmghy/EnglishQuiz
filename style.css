@@ -1,96 +1,196 @@
-body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    background-color: #f0f8ff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-    padding: 20px 0;
+// script.js
+
+const APP_VERSION = "v1.10"; // バージョンアップ！
+
+// --- HTML要素を取得 ---
+const appVersionSpan = document.getElementById('app-version');
+const htmlVersionSpan = document.getElementById('html-version');
+const cssVersionSpan = document.getElementById('css-version');   // ▼▼▼ 追加 ▼▼▼
+const csvVersionSpan = document.getElementById('csv-version');
+// ... (他の要素取得は変更なし) ...
+const questionText = document.getElementById('question-text');
+const optionsContainer = document.getElementById('options-container');
+const feedbackText = document.getElementById('feedback-text');
+const explanationText = document.getElementById('explanation-text');
+const quizContainer = document.getElementById('quiz-container');
+const resultContainer = document.getElementById('result-container');
+const scoreText = document.getElementById('score-text');
+const totalText = document.getElementById('total-text');
+const detailedResultsList = document.getElementById('detailed-results-list');
+const copyFeedback = document.getElementById('copy-feedback');
+const hintText = document.getElementById('hint-text');
+const hintBtn = document.getElementById('hint-btn');
+const nextBtn = document.getElementById('next-btn');
+
+// --- グローバル変数を定義 ---
+let quizData = [];
+let currentQuestionIndex = 0;
+let score = 0;
+let sessionResults = [];
+
+// --- ファイルの最終更新日時を取得して表示する関数 ---
+async function displayFileVersions() {
+    appVersionSpan.textContent = `App: ${APP_VERSION}`;
+    try {
+        const htmlResponse = await fetch('index.html', { method: 'HEAD' });
+        const cssResponse = await fetch('style.css', { method: 'HEAD' }); // ▼▼▼ 追加 ▼▼▼
+        const csvResponse = await fetch('quiz.csv', { method: 'HEAD' });
+
+        const htmlLastModified = new Date(htmlResponse.headers.get('Last-Modified')).toLocaleString('ja-JP');
+        const cssLastModified = new Date(cssResponse.headers.get('Last-Modified')).toLocaleString('ja-JP'); // ▼▼▼ 追加 ▼▼▼
+        const csvLastModified = new Date(csvResponse.headers.get('Last-Modified')).toLocaleString('ja-JP');
+
+        htmlVersionSpan.textContent = `HTML: ${htmlLastModified}`;
+        cssVersionSpan.textContent = `CSS: ${cssLastModified}`; // ▼▼▼ 追加 ▼▼▼
+        csvVersionSpan.textContent = `CSV: ${csvLastModified}`;
+        
+    } catch (error) {
+        console.error("ファイルバージョンの取得に失敗:", error);
+        htmlVersionSpan.textContent = "HTML: 取得失敗";
+        cssVersionSpan.textContent = "CSS: 取得失敗"; // ▼▼▼ 追加 ▼▼▼
+        csvVersionSpan.textContent = "CSV: 取得失敗";
+    }
 }
 
-#version-info {
-    position: fixed;
-    top: 10px;
-    right: 15px;
-    font-size: 11px;
-    color: #888;
-    text-align: right;
-}
-#version-info span {
-    display: block;
-}
-
-#quiz-container, #result-container {
-    background-color: white;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    width: 90%;
-    max-width: 600px;
-    text-align: center;
-}
-
-h1 { color: #333; font-size: 1.5em; min-height: 80px; }
-
-/* ▼▼▼ ここからが今回の修正の重要ポイント ▼▼▼ */
-#hint-area {
-    margin-bottom: 20px;
-    text-align: center; /* ヒントボタンを中央に配置 */
-}
-
-#hint-btn {
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    padding: 10px 20px; /* 少し大きくして押しやすく */
-    border-radius: 20px;
-    font-size: 0.9em;
-    cursor: pointer;
-    margin-bottom: 15px; /* ボタンと選択肢の間に余白を追加 */
-}
-#hint-btn:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
+// --- CSVファイルを読み込んで解析する関数 ---
+async function loadQuizData() {
+    // ... (この関数は変更なし) ...
+    try {
+        const response = await fetch('quiz.csv');
+        if (!response.ok) throw new Error('Network response was not ok.');
+        const csvText = await response.text();
+        const lines = csvText.trim().split('\n');
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        const data = [];
+        for (let i = 1; i < lines.length; i++) {
+            if (lines[i].trim() === '') continue;
+            const values = lines[i].split(',');
+            const entry = {};
+            entry.question = values[0].trim().replace(/"/g, '');
+            entry.options = values[1].trim().replace(/"/g, '').split('|');
+            entry.answer = values[2].trim().replace(/"/g, '');
+            entry.explanation = values[3].trim().replace(/"/g, '');
+            entry.hint = values[4] ? values[4].trim().replace(/"/g, '') : "この問題のヒントはありません。";
+            data.push(entry);
+        }
+        return data;
+    } catch (error) {
+        console.error('Failed to load quiz data:', error);
+        questionText.textContent = "クイズデータの読み込みに失敗しました。";
+        return [];
+    }
 }
 
-#options-container { 
-    display: flex;
-    flex-direction: column; /* 選択肢を縦に並べる */
-    gap: 12px; /* 選択肢の間の余白 */
-    margin: 0; /* 不要な余白をリセット */
+// --- アプリケーションの初期化と開始 ---
+async function initializeApp() {
+    await displayFileVersions(); 
+    hintBtn.addEventListener('click', showHint);
+    nextBtn.addEventListener('click', handleNextButtonClick);
+    quizData = await loadQuizData();
+    if (quizData.length > 0) {
+        startQuiz();
+    }
 }
 
-.option-btn {
-    background-color: #f8f9fa;
-    border: 2px solid #dee2e6;
-    border-radius: 8px;
-    padding: 15px;
-    font-size: 1em;
-    cursor: pointer;
-    transition: all 0.2s;
-    width: 100%; /* 幅をコンテナいっぱいに広げる */
-    box-sizing: border-box; /* paddingを含めて幅100%にする */
+// --- (以降のゲームロジックは変更なし) ---
+function startQuiz() {
+    currentQuestionIndex = 0;
+    score = 0;
+    sessionResults = [];
+    quizContainer.style.display = 'block';
+    resultContainer.style.display = 'none';
+    copyFeedback.textContent = '';
+    showQuestion();
 }
-/* ▲▲▲ ここまでが修正の重要ポイント ▲▲▲ */
+function showQuestion() {
+    feedbackText.textContent = '';
+    explanationText.style.display = 'none';
+    nextBtn.style.display = 'none';
+    optionsContainer.innerHTML = '';
+    hintText.style.display = 'none';
+    hintBtn.style.display = 'block';
+    hintBtn.disabled = false;
+    const currentQuestion = quizData[currentQuestionIndex];
+    questionText.textContent = currentQuestion.question;
+    currentQuestion.options.forEach(option => {
+        const button = document.createElement('button');
+        button.textContent = option;
+        button.classList.add('option-btn');
+        button.addEventListener('click', () => selectAnswer(option));
+        optionsContainer.appendChild(button);
+    });
+}
+function showHint() {
+    const currentQuestion = quizData[currentQuestionIndex];
+    hintText.textContent = `ヒント: ${currentQuestion.hint}`;
+    hintText.style.display = 'block';
+    hintBtn.disabled = true;
+}
+function selectAnswer(selectedOption) {
+    const currentQuestion = quizData[currentQuestionIndex];
+    const optionButtons = document.querySelectorAll('.option-btn');
+    optionButtons.forEach(btn => btn.disabled = true);
+    hintBtn.style.display = 'none';
+    const isCorrect = selectedOption === currentQuestion.answer;
+    feedbackText.textContent = isCorrect ? "✅ 正解！" : "❌ 不正解...";
+    feedbackText.style.color = isCorrect ? 'green' : 'red';
+    if (isCorrect) score++;
+    sessionResults.push({ question: currentQuestion.question, userAnswer: selectedOption, correctAnswer: currentQuestion.answer, isCorrect: isCorrect });
+    explanationText.textContent = currentQuestion.explanation;
+    explanationText.style.display = 'block';
+    nextBtn.style.display = 'block';
+}
+function handleNextButtonClick() {
+    currentQuestionIndex++;
+    if (currentQuestionIndex < quizData.length) {
+        showQuestion();
+    } else {
+        showResult();
+    }
+}
+function generateResultsSummaryText() {
+    let summary = `クイズの結果: ${score} / ${quizData.length} 正解！\n\n`;
+    sessionResults.forEach((result, index) => {
+        const icon = result.isCorrect ? '✅' : '❌';
+        summary += `${icon} 問題 ${index + 1}: ${result.question}\n  あなたの回答: ${result.userAnswer}\n`;
+        if (!result.isCorrect) summary += `  正解: ${result.correctAnswer}\n`;
+        summary += '\n';
+    });
+    return summary;
+}
+function showResult() {
+    quizContainer.style.display = 'none';
+    resultContainer.style.display = 'block';
+    scoreText.textContent = score;
+    totalText.textContent = quizData.length;
+    detailedResultsList.innerHTML = '';
+    sessionResults.forEach((result, index) => {
+        const resultItem = document.createElement('div');
+        resultItem.classList.add('result-item', result.isCorrect ? 'correct' : 'wrong');
+        let resultHTML = `<p><strong>問題 ${index + 1}:</strong> ${result.question}</p><p>あなたの回答: ${result.userAnswer}</p>`;
+        if (!result.isCorrect) resultHTML += `<p>正解: ${result.correctAnswer}</p>`;
+        resultItem.innerHTML = resultHTML;
+        detailedResultsList.appendChild(resultItem);
+    });
+}
+resultContainer.addEventListener('click', (event) => {
+    const target = event.target;
+    const summaryText = generateResultsSummaryText();
+    if (target.id === 'share-btn') {
+        if (navigator.share) {
+            navigator.share({ title: 'クイズの結果', text: summaryText }).catch(error => console.log('Share failed:', error));
+        } else {
+            alert('お使いのブラウザは共有機能に対応していません。');
+        }
+    } else if (target.id === 'copy-btn') {
+        navigator.clipboard.writeText(summaryText).then(() => { copyFeedback.textContent = 'コピーしました！'; }).catch(err => { copyFeedback.textContent = 'コピーに失敗しました'; });
+    } else if (target.closest('#email-btn')) {
+        const mailBody = encodeURIComponent(summaryText);
+        target.href = `mailto:?subject=クイズの結果&body=${mailBody}`;
+    } else if (target.id === 'retry-btn') {
+        startQuiz();
+    }
+});
 
-
-.option-btn:hover:not(:disabled) { background-color: #e9ecef; }
-.option-btn.correct { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
-.option-btn.wrong { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
-
-#feedback-container { min-height: 80px; margin-top: 20px; }
-#hint-text { background-color: #fffbe6; border: 1px solid #ffeeba; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 15px; color: #856404; }
-#explanation-text { background-color: #e9f7ff; padding: 10px; border-radius: 8px; text-align: left; margin-top: 10px; }
-#next-btn, #retry-btn { background-color: #007bff; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-size: 1em; cursor: pointer; margin-top: 20px; }
-
-#detailed-results-container { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
-#detailed-results-list { max-height: 250px; overflow-y: auto; text-align: left; }
-.result-item { padding: 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #ddd; }
-.result-item.correct { background-color: #f1fff1; border-left: 5px solid #28a745; }
-.result-item.wrong { background-color: #fff1f1; border-left: 5px solid #dc3545; }
-
-#share-container { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
-.share-btn { text-decoration: none; display: inline-block; background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 0.9em; cursor: pointer; margin: 5px; }
-.share-btn:hover { background-color: #5a6268; }
-#copy-feedback { color: green; font-weight: bold; min-height: 20px; }
+// --- アプリケーションを開始 ---
+initializeApp();
