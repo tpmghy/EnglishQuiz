@@ -178,7 +178,7 @@ function addTranslationToText(text, question) {
             const english = match.replace(/「|」/g, '');
             const translation = translateEnglishToJapanese(english);
             if (translation !== english) {
-                result += `\n\n📝 和訳: ${translation}`;
+                result += `\n\n📝 ${english}\n→ ${translation}`;
             }
         });
         return result;
