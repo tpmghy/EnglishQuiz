@@ -138,6 +138,53 @@ function updateProgress() {
         progressFill.style.width = `${progressPercentage}%`;
     }
 }
+
+// 英文を和訳する関数
+function translateEnglishToJapanese(english) {
+    const translations = {
+        "You are happy.": "あなたは幸せです。",
+        "Am I a student?": "私は学生ですか？",
+        "I am busy.": "私は忙しいです。",
+        "Are you tired?": "あなたは疲れていますか？",
+        "I'm": "私は〜です",
+        "You're": "あなたは〜です",
+        "You are not a teacher.": "あなたは教師ではありません。",
+        "I am not sleepy.": "私は眠くありません。",
+        "Are you hungry?": "あなたはお腹が空いていますか？",
+        "I am a tennis player.": "私はテニス選手です。",
+        "You are in the classroom.": "あなたは教室にいます。",
+        "Am I late?": "私は遅れていますか？",
+        "He is busy.": "彼は忙しいです。",
+        "Is she tired?": "彼女は疲れていますか？",
+        "She is a student.": "彼女は学生です。",
+        "He's": "彼は〜です",
+        "She isn't": "彼女は〜ではありません",
+        "Is he your brother?": "彼はあなたの兄弟ですか？",
+        "It is a cat.": "それは猫です。",
+        "He is a soccer player.": "彼はサッカー選手です。",
+        "That is not my book.": "それは私の本ではありません。",
+        "Is she a good singer?": "彼女は歌が上手いですか？"
+    };
+    return translations[english] || english;
+}
+
+// 問題文から英文を抽出して和訳を追加する関数
+function addTranslationToText(text, question) {
+    // 問題文に含まれる英文を抽出
+    const englishMatches = question.match(/「([^」]+)」/g);
+    if (englishMatches) {
+        let result = text;
+        englishMatches.forEach(match => {
+            const english = match.replace(/「|」/g, '');
+            const translation = translateEnglishToJapanese(english);
+            if (translation !== english) {
+                result += `\n\n📝 和訳: ${translation}`;
+            }
+        });
+        return result;
+    }
+    return text;
+}
 function startQuizForTopic(topic) { 
     quizData = allQuestions.filter(question => question.topic === topic); 
     if (quizData.length > 0) { 
@@ -168,8 +215,37 @@ function startReviewQuiz(reviewQuestions) {
     startQuiz(); 
 }
 function showQuestion() { feedbackText.textContent = ''; explanationText.style.display = 'none'; nextBtn.style.display = 'none'; optionsContainer.innerHTML = ''; hintText.style.display = 'none'; hintBtn.style.display = 'block'; hintBtn.disabled = false; hintWasViewedForCurrentQuestion = false; const currentQuestion = quizData[currentQuestionIndex]; questionText.textContent = currentQuestion.question; currentQuestion.options.forEach(option => { const button = document.createElement('button'); button.textContent = option; button.classList.add('option-btn'); button.addEventListener('click', (event) => selectAnswer(option, event.target)); optionsContainer.appendChild(button); }); }
-function showHint() { const currentQuestion = quizData[currentQuestionIndex]; hintText.textContent = `ヒント: ${currentQuestion.hint}`; hintText.style.display = 'block'; hintBtn.disabled = true; hintWasViewedForCurrentQuestion = true; }
-function selectAnswer(selectedOption, selectedButton) { const optionButtons = document.querySelectorAll('.option-btn'); optionButtons.forEach(btn => btn.disabled = true); hintBtn.style.display = 'none'; selectedButton.classList.add('selected'); setTimeout(() => { const currentQuestion = quizData[currentQuestionIndex]; const correctAnswer = currentQuestion.answer; const isCorrect = selectedOption === correctAnswer; optionButtons.forEach(button => { if (button.textContent === correctAnswer) button.classList.add('correct'); else button.classList.add('wrong'); }); feedbackText.textContent = isCorrect ? "✅ 正解！" : "❌ 不正解..."; feedbackText.style.color = isCorrect ? 'green' : 'red'; if (isCorrect) score++; sessionResults.push({ question: currentQuestion.question, userAnswer: selectedOption, correctAnswer: correctAnswer, isCorrect: isCorrect, hintViewed: hintWasViewedForCurrentQuestion }); explanationText.textContent = currentQuestion.explanation; explanationText.style.display = 'block'; nextBtn.style.display = 'block'; }, 700); }
+function showHint() { 
+    const currentQuestion = quizData[currentQuestionIndex]; 
+    const hintWithTranslation = addTranslationToText(currentQuestion.hint, currentQuestion.question);
+    hintText.textContent = `ヒント: ${hintWithTranslation}`; 
+    hintText.style.display = 'block'; 
+    hintBtn.disabled = true; 
+    hintWasViewedForCurrentQuestion = true; 
+}
+function selectAnswer(selectedOption, selectedButton) { 
+    const optionButtons = document.querySelectorAll('.option-btn'); 
+    optionButtons.forEach(btn => btn.disabled = true); 
+    hintBtn.style.display = 'none'; 
+    selectedButton.classList.add('selected'); 
+    setTimeout(() => { 
+        const currentQuestion = quizData[currentQuestionIndex]; 
+        const correctAnswer = currentQuestion.answer; 
+        const isCorrect = selectedOption === correctAnswer; 
+        optionButtons.forEach(button => { 
+            if (button.textContent === correctAnswer) button.classList.add('correct'); 
+            else button.classList.add('wrong'); 
+        }); 
+        feedbackText.textContent = isCorrect ? "✅ 正解！" : "❌ 不正解..."; 
+        feedbackText.style.color = isCorrect ? 'green' : 'red'; 
+        if (isCorrect) score++; 
+        sessionResults.push({ question: currentQuestion.question, userAnswer: selectedOption, correctAnswer: correctAnswer, isCorrect: isCorrect, hintViewed: hintWasViewedForCurrentQuestion }); 
+        const explanationWithTranslation = addTranslationToText(currentQuestion.explanation, currentQuestion.question);
+        explanationText.textContent = explanationWithTranslation; 
+        explanationText.style.display = 'block'; 
+        nextBtn.style.display = 'block'; 
+    }, 700); 
+}
 function handleNextButtonClick() { 
     currentQuestionIndex++; 
     if (currentQuestionIndex < quizData.length) { 
