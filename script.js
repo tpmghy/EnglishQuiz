@@ -1,6 +1,6 @@
 // script.js
 
-const APP_VERSION = "v1.7"; // バージョンアップ！
+const APP_VERSION = "v1.8"; // バージョンアップ！
 
 // --- HTML要素を取得 ---
 const versionInfo = document.getElementById('version-info');
@@ -15,6 +15,9 @@ const totalText = document.getElementById('total-text');
 const detailedResultsList = document.getElementById('detailed-results-list');
 const copyFeedback = document.getElementById('copy-feedback');
 const hintText = document.getElementById('hint-text');
+// ▼▼▼ 変更点: ボタンを再度ここで取得します ▼▼▼
+const hintBtn = document.getElementById('hint-btn');
+const nextBtn = document.getElementById('next-btn');
 
 // --- グローバル変数を定義 ---
 let quizData = [];
@@ -29,13 +32,10 @@ async function loadQuizData() {
         if (!response.ok) throw new Error('Network response was not ok.');
         const csvText = await response.text();
         const lines = csvText.trim().split('\n');
-        // ヘッダー行を小文字にして空白を除去し、より堅牢にする
         const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
         const data = [];
         for (let i = 1; i < lines.length; i++) {
-            // 空行をスキップ
             if (lines[i].trim() === '') continue;
-            
             const values = lines[i].split(',');
             const entry = {};
             entry.question = values[0].trim().replace(/"/g, '');
@@ -56,6 +56,11 @@ async function loadQuizData() {
 // --- アプリケーションの初期化と開始 ---
 async function initializeApp() {
     versionInfo.textContent = APP_VERSION;
+    
+    // ▼▼▼ 変更点: 静的なボタンには、ここで直接イベントリスナーを設定します ▼▼▼
+    hintBtn.addEventListener('click', showHint);
+    nextBtn.addEventListener('click', handleNextButtonClick);
+
     quizData = await loadQuizData();
     if (quizData.length > 0) {
         startQuiz();
@@ -75,10 +80,9 @@ function startQuiz() {
 }
 
 function showQuestion() {
-    const hintBtn = document.getElementById('hint-btn'); // ボタンの状態を直接操作するため都度取得
     feedbackText.textContent = '';
     explanationText.style.display = 'none';
-    document.getElementById('next-btn').style.display = 'none';
+    nextBtn.style.display = 'none';
     optionsContainer.innerHTML = '';
     
     hintText.style.display = 'none';
@@ -87,11 +91,13 @@ function showQuestion() {
 
     const currentQuestion = quizData[currentQuestionIndex];
     questionText.textContent = currentQuestion.question;
+
     currentQuestion.options.forEach(option => {
         const button = document.createElement('button');
         button.textContent = option;
         button.classList.add('option-btn');
-        // イベント委譲を使うので、ここではイベントリスナーを追加しない
+        // ▼▼▼ 変更点: 動的なボタンには、ここで直接イベントを設定します ▼▼▼
+        button.addEventListener('click', () => selectAnswer(option));
         optionsContainer.appendChild(button);
     });
 }
@@ -100,7 +106,7 @@ function showHint() {
     const currentQuestion = quizData[currentQuestionIndex];
     hintText.textContent = `ヒント: ${currentQuestion.hint}`;
     hintText.style.display = 'block';
-    document.getElementById('hint-btn').disabled = true; // ヒントは1問につき1回だけ
+    hintBtn.disabled = true;
 }
 
 function selectAnswer(selectedOption) {
@@ -108,7 +114,7 @@ function selectAnswer(selectedOption) {
     const optionButtons = document.querySelectorAll('.option-btn');
     optionButtons.forEach(btn => btn.disabled = true);
     
-    document.getElementById('hint-btn').style.display = 'none';
+    hintBtn.style.display = 'none';
 
     const isCorrect = selectedOption === currentQuestion.answer;
     feedbackText.textContent = isCorrect ? "✅ 正解！" : "❌ 不正解...";
@@ -119,7 +125,17 @@ function selectAnswer(selectedOption) {
     
     explanationText.textContent = currentQuestion.explanation;
     explanationText.style.display = 'block';
-    document.getElementById('next-btn').style.display = 'block';
+    nextBtn.style.display = 'block';
+}
+
+// ▼▼▼ 変更点: 「次の問題へ」ボタンの処理を独立した関数にしました ▼▼▼
+function handleNextButtonClick() {
+    currentQuestionIndex++;
+    if (currentQuestionIndex < quizData.length) {
+        showQuestion();
+    } else {
+        showResult();
+    }
 }
 
 function generateResultsSummaryText() {
@@ -149,32 +165,7 @@ function showResult() {
     });
 }
 
-// --- イベント委譲 (Event Delegation) ---
-
-// クイズ中の操作（ヒント、回答、次の問題へ）
-quizContainer.addEventListener('click', (event) => {
-    // 選択肢ボタンがクリックされたかチェック
-    if (event.target.classList.contains('option-btn')) {
-        selectAnswer(event.target.textContent);
-        return; // 他の処理をしないように
-    }
-    // クリックされた要素のIDで処理を分岐
-    switch (event.target.id) {
-        case 'hint-btn':
-            showHint();
-            break;
-        case 'next-btn':
-            currentQuestionIndex++;
-            if (currentQuestionIndex < quizData.length) {
-                showQuestion();
-            } else {
-                showResult();
-            }
-            break;
-    }
-});
-
-// 結果画面での操作（共有、コピー、メール、もう一度）
+// 結果画面の操作は、イベント委譲のままにしておきます（こちらは問題なく動作するため）
 resultContainer.addEventListener('click', (event) => {
     const target = event.target;
     const summaryText = generateResultsSummaryText();
