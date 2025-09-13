@@ -4,8 +4,9 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh; /* 画面が小さくても中央に来るように min-height に変更 */
     margin: 0;
+    padding: 20px 0; /* 上下に余白を追加 */
 }
 
 #quiz-container, #result-container {
@@ -78,4 +79,32 @@ h1 {
     border-radius: 8px;
     font-size: 1em;
     cursor: pointer;
+    margin-top: 20px; /* ボタンの余白を調整 */
 }
+
+/* ▼▼▼ ここから追加 ▼▼▼ */
+#detailed-results-container {
+    margin-top: 30px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}
+#detailed-results-list {
+    max-height: 250px; /* 結果が多い場合にスクロールできるように */
+    overflow-y: auto;
+    text-align: left;
+}
+.result-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+.result-item.correct {
+    background-color: #f1fff1;
+    border-left: 5px solid #28a745;
+}
+.result-item.wrong {
+    background-color: #fff1f1;
+    border-left: 5px solid #dc3545;
+}
+/* ▲▲▲ ここまで追加 ▲▲▲ */

@@ -1,7 +1,6 @@
 // script.js
 
 // --- 1. クイズのデータを作成 ---
-// 問題、選択肢、正解、解説をオブジェクトの配列として用意
 const quizData = [
     {
         question: "主語が「I」のときのbe動詞は？",
@@ -34,31 +33,30 @@ const resultContainer = document.getElementById('result-container');
 const scoreText = document.getElementById('score-text');
 const totalText = document.getElementById('total-text');
 const retryBtn = document.getElementById('retry-btn');
+const detailedResultsList = document.getElementById('detailed-results-list'); // ▼▼▼ 追加 ▼▼▼
 
 // --- 3. ゲームの状態を管理する変数 ---
-let currentQuestionIndex = 0; // 現在の問題のインデックス
-let score = 0;                // 正解数
+let currentQuestionIndex = 0;
+let score = 0;
+let sessionResults = []; // ▼▼▼ 追加 ▼▼▼: 各問題の結果を保存する配列
 
 // --- 4. ゲームのロジックを関数として定義 ---
 
-// クイズを開始/リセットする関数
 function startQuiz() {
     currentQuestionIndex = 0;
     score = 0;
+    sessionResults = []; // ▼▼▼ 追加 ▼▼▼: 開始時に結果をリセット
     quizContainer.style.display = 'block';
     resultContainer.style.display = 'none';
     showQuestion();
 }
 
-// 問題を表示する関数
 function showQuestion() {
-    // 前回のフィードバックをクリア
     feedbackText.textContent = '';
     explanationText.textContent = '';
     explanationText.style.display = 'none';
     nextBtn.style.display = 'none';
     
-    // 選択肢ボタンをクリア
     optionsContainer.innerHTML = '';
 
     const currentQuestion = quizData[currentQuestionIndex];
@@ -73,15 +71,15 @@ function showQuestion() {
     });
 }
 
-// 回答を選択したときの処理
 function selectAnswer(selectedOption) {
     const currentQuestion = quizData[currentQuestionIndex];
     const optionButtons = document.querySelectorAll('.option-btn');
 
-    // すべてのボタンを無効化
     optionButtons.forEach(btn => btn.disabled = true);
 
-    if (selectedOption === currentQuestion.answer) {
+    const isCorrect = selectedOption === currentQuestion.answer; // ▼▼▼ 変更 ▼▼▼
+
+    if (isCorrect) {
         feedbackText.textContent = "✅ 正解！";
         feedbackText.style.color = 'green';
         score++;
@@ -90,15 +88,22 @@ function selectAnswer(selectedOption) {
         feedbackText.style.color = 'red';
     }
     
-    // 解説を表示
+    // ▼▼▼ ここから追加 ▼▼▼
+    // この問題の結果を保存する
+    sessionResults.push({
+        question: currentQuestion.question,
+        userAnswer: selectedOption,
+        correctAnswer: currentQuestion.answer,
+        isCorrect: isCorrect
+    });
+    // ▲▲▲ ここまで追加 ▲▲▲
+
     explanationText.textContent = currentQuestion.explanation;
     explanationText.style.display = 'block';
     
-    // 「次の問題へ」ボタンを表示
     nextBtn.style.display = 'block';
 }
 
-// 「次の問題へ」ボタンを押したときの処理
 nextBtn.addEventListener('click', () => {
     currentQuestionIndex++;
     if (currentQuestionIndex < quizData.length) {
@@ -108,16 +113,37 @@ nextBtn.addEventListener('click', () => {
     }
 });
 
-// 「もう一度」ボタンを押したときの処理
 retryBtn.addEventListener('click', startQuiz);
 
-// 結果を表示する関数
+// ▼▼▼ ここから変更 ▼▼▼
+// 結果を表示する関数 (一覧表示機能を追加)
 function showResult() {
     quizContainer.style.display = 'none';
     resultContainer.style.display = 'block';
     scoreText.textContent = score;
     totalText.textContent = quizData.length;
+
+    // 結果一覧を生成
+    detailedResultsList.innerHTML = ''; // 前の結果をクリア
+    sessionResults.forEach((result, index) => {
+        const resultItem = document.createElement('div');
+        resultItem.classList.add('result-item');
+        resultItem.classList.add(result.isCorrect ? 'correct' : 'wrong');
+
+        let resultHTML = `
+            <p><strong>問題 ${index + 1}:</strong> ${result.question}</p>
+            <p>あなたの回答: ${result.userAnswer}</p>
+        `;
+        
+        if (!result.isCorrect) {
+            resultHTML += `<p>正解: ${result.correctAnswer}</p>`;
+        }
+
+        resultItem.innerHTML = resultHTML;
+        detailedResultsList.appendChild(resultItem);
+    });
 }
+// ▲▲▲ ここまで変更 ▲▲▲
 
 // --- 5. ゲームを開始 ---
 startQuiz();
