@@ -4,9 +4,17 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh; /* 画面が小さくても中央に来るように min-height に変更 */
+    min-height: 100vh;
     margin: 0;
-    padding: 20px 0; /* 上下に余白を追加 */
+    padding: 20px 0;
+}
+
+#version-info {
+    position: fixed;
+    top: 10px;
+    right: 15px;
+    font-size: 12px;
+    color: #888;
 }
 
 #quiz-container, #result-container {
@@ -19,92 +27,42 @@ body {
     text-align: center;
 }
 
-h1 {
-    color: #333;
-    font-size: 1.5em;
-    min-height: 80px;
-}
+h1 { color: #333; font-size: 1.5em; min-height: 80px; }
+#options-container { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
 
-#options-container {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin: 20px 0;
-}
+.option-btn { background-color: #f8f9fa; border: 2px solid #dee2e6; border-radius: 8px; padding: 15px; font-size: 1em; cursor: pointer; transition: all 0.2s; }
+.option-btn:hover:not(:disabled) { background-color: #e9ecef; }
+.option-btn.correct { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+.option-btn.wrong { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
 
-.option-btn {
-    background-color: #f8f9fa;
-    border: 2px solid #dee2e6;
-    border-radius: 8px;
-    padding: 15px;
-    font-size: 1em;
-    cursor: pointer;
-    transition: all 0.2s;
-}
+#feedback-container { min-height: 80px; margin-top: 20px; }
+#explanation-text { background-color: #e9f7ff; padding: 10px; border-radius: 8px; text-align: left; margin-top: 10px; }
+#next-btn, #retry-btn { background-color: #007bff; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-size: 1em; cursor: pointer; margin-top: 20px; }
 
-.option-btn:hover:not(:disabled) {
-    background-color: #e9ecef;
-}
-
-.option-btn.correct {
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-    color: #155724;
-}
-
-.option-btn.wrong {
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-    color: #721c24;
-}
-
-#feedback-container {
-    min-height: 80px;
-    margin-top: 20px;
-}
-
-#explanation-text {
-    background-color: #e9f7ff;
-    padding: 10px;
-    border-radius: 8px;
-    text-align: left;
-    margin-top: 10px;
-}
-
-#next-btn, #retry-btn {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 8px;
-    font-size: 1em;
-    cursor: pointer;
-    margin-top: 20px; /* ボタンの余白を調整 */
-}
+#detailed-results-container { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
+#detailed-results-list { max-height: 250px; overflow-y: auto; text-align: left; }
+.result-item { padding: 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #ddd; }
+.result-item.correct { background-color: #f1fff1; border-left: 5px solid #28a745; }
+.result-item.wrong { background-color: #fff1f1; border-left: 5px solid #dc3545; }
 
 /* ▼▼▼ ここから追加 ▼▼▼ */
-#detailed-results-container {
+#share-container {
     margin-top: 30px;
-    border-top: 1px solid #eee;
     padding-top: 20px;
+    border-top: 1px solid #eee;
 }
-#detailed-results-list {
-    max-height: 250px; /* 結果が多い場合にスクロールできるように */
-    overflow-y: auto;
-    text-align: left;
-}
-.result-item {
-    padding: 12px;
-    margin-bottom: 8px;
+.share-btn {
+    text-decoration: none; /* aタグの下線を消す */
+    display: inline-block;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
     border-radius: 8px;
-    border: 1px solid #ddd;
+    font-size: 0.9em;
+    cursor: pointer;
+    margin: 5px;
 }
-.result-item.correct {
-    background-color: #f1fff1;
-    border-left: 5px solid #28a745;
-}
-.result-item.wrong {
-    background-color: #fff1f1;
-    border-left: 5px solid #dc3545;
-}
+.share-btn:hover { background-color: #5a6268; }
+#copy-feedback { color: green; font-weight: bold; min-height: 20px; }
 /* ▲▲▲ ここまで追加 ▲▲▲ */
