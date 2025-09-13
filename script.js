@@ -7,7 +7,8 @@ let appVersionSpan, htmlVersionSpan, cssVersionSpan, csvVersionSpan,
     selectionContainer, quizContainer, resultContainer,
     questionText, optionsContainer, feedbackText, explanationText,
     scoreText, totalText, detailedResultsList, copyFeedback,
-    hintText, hintBtn, nextBtn, reviewBtn, currentTopicName;
+    hintText, hintBtn, nextBtn, reviewBtn, currentTopicName,
+    progressText, progressFill;
 
 // --- グローバル変数 ---
 let allQuestions = [];
@@ -41,6 +42,8 @@ window.addEventListener('DOMContentLoaded', () => {
     nextBtn = document.getElementById('next-btn');
     reviewBtn = document.getElementById('review-btn');
     currentTopicName = document.getElementById('current-topic-name');
+    progressText = document.getElementById('progress-text');
+    progressFill = document.getElementById('progress-fill');
 
     // アプリケーションの初期化を開始
     initializeApp();
@@ -123,6 +126,18 @@ function setTopicName(topic) {
         currentTopicName.textContent = topicNames[topic] || topic;
     }
 }
+
+// 進捗を更新する関数
+function updateProgress() {
+    if (progressText && progressFill && quizData.length > 0) {
+        const currentQuestion = currentQuestionIndex + 1;
+        const totalQuestions = quizData.length;
+        const progressPercentage = (currentQuestion / totalQuestions) * 100;
+        
+        progressText.textContent = `問題 ${currentQuestion} / ${totalQuestions}`;
+        progressFill.style.width = `${progressPercentage}%`;
+    }
+}
 function startQuizForTopic(topic) { 
     quizData = allQuestions.filter(question => question.topic === topic); 
     if (quizData.length > 0) { 
@@ -134,7 +149,16 @@ function startQuizForTopic(topic) {
         alert("この単元の問題が見つかりませんでした。"); 
     } 
 }
-function startQuiz() { currentQuestionIndex = 0; score = 0; sessionResults = []; quizContainer.style.display = 'block'; resultContainer.style.display = 'none'; copyFeedback.textContent = ''; showQuestion(); }
+function startQuiz() { 
+    currentQuestionIndex = 0; 
+    score = 0; 
+    sessionResults = []; 
+    quizContainer.style.display = 'block'; 
+    resultContainer.style.display = 'none'; 
+    copyFeedback.textContent = ''; 
+    updateProgress(); 
+    showQuestion(); 
+}
 function startReviewQuiz(reviewQuestions) { 
     quizData = reviewQuestions; 
     // 復習クイズの場合は単元名を「復習」に設定
@@ -146,7 +170,15 @@ function startReviewQuiz(reviewQuestions) {
 function showQuestion() { feedbackText.textContent = ''; explanationText.style.display = 'none'; nextBtn.style.display = 'none'; optionsContainer.innerHTML = ''; hintText.style.display = 'none'; hintBtn.style.display = 'block'; hintBtn.disabled = false; hintWasViewedForCurrentQuestion = false; const currentQuestion = quizData[currentQuestionIndex]; questionText.textContent = currentQuestion.question; currentQuestion.options.forEach(option => { const button = document.createElement('button'); button.textContent = option; button.classList.add('option-btn'); button.addEventListener('click', (event) => selectAnswer(option, event.target)); optionsContainer.appendChild(button); }); }
 function showHint() { const currentQuestion = quizData[currentQuestionIndex]; hintText.textContent = `ヒント: ${currentQuestion.hint}`; hintText.style.display = 'block'; hintBtn.disabled = true; hintWasViewedForCurrentQuestion = true; }
 function selectAnswer(selectedOption, selectedButton) { const optionButtons = document.querySelectorAll('.option-btn'); optionButtons.forEach(btn => btn.disabled = true); hintBtn.style.display = 'none'; selectedButton.classList.add('selected'); setTimeout(() => { const currentQuestion = quizData[currentQuestionIndex]; const correctAnswer = currentQuestion.answer; const isCorrect = selectedOption === correctAnswer; optionButtons.forEach(button => { if (button.textContent === correctAnswer) button.classList.add('correct'); else button.classList.add('wrong'); }); feedbackText.textContent = isCorrect ? "✅ 正解！" : "❌ 不正解..."; feedbackText.style.color = isCorrect ? 'green' : 'red'; if (isCorrect) score++; sessionResults.push({ question: currentQuestion.question, userAnswer: selectedOption, correctAnswer: correctAnswer, isCorrect: isCorrect, hintViewed: hintWasViewedForCurrentQuestion }); explanationText.textContent = currentQuestion.explanation; explanationText.style.display = 'block'; nextBtn.style.display = 'block'; }, 700); }
-function handleNextButtonClick() { currentQuestionIndex++; if (currentQuestionIndex < quizData.length) { showQuestion(); } else { showResult(); } }
+function handleNextButtonClick() { 
+    currentQuestionIndex++; 
+    if (currentQuestionIndex < quizData.length) { 
+        updateProgress(); 
+        showQuestion(); 
+    } else { 
+        showResult(); 
+    } 
+}
 function generateResultsSummaryText() { let summary = `クイズの結果: ${score} / ${quizData.length} 正解！\n\n`; sessionResults.forEach((result, index) => { const icon = result.isCorrect ? '✅' : '❌'; summary += `${icon} 問題 ${index + 1}: ${result.question}\n  あなたの回答: ${result.userAnswer}\n`; if (!result.isCorrect) summary += `  正解: ${result.correctAnswer}\n`; summary += '\n'; }); return summary; }
 function showResult() { quizContainer.style.display = 'none'; resultContainer.style.display = 'block'; scoreText.textContent = score; totalText.textContent = quizData.length; detailedResultsList.innerHTML = ''; sessionResults.forEach((result, index) => { const resultItem = document.createElement('div'); resultItem.classList.add('result-item', result.isCorrect ? 'correct' : 'wrong'); let resultHTML = `<p><strong>問題 ${index + 1}:</strong> ${result.question}</p><p>あなたの回答: ${result.userAnswer}</p>`; if (!result.isCorrect) resultHTML += `<p>正解: ${result.correctAnswer}</p>`; if (result.hintViewed) resultHTML += `<p class="hint-indicator">💡 ヒントを見ました</p>`; resultItem.innerHTML = resultHTML; detailedResultsList.appendChild(resultItem); }); const reviewQuestions = sessionResults.filter(result => !result.isCorrect || result.hintViewed).map(result => allQuestions.find(q => q.question === result.question)); const uniqueReviewQuestions = [...new Set(reviewQuestions)]; if (uniqueReviewQuestions.length > 0) { reviewBtn.style.display = 'inline-block'; } else { reviewBtn.style.display = 'none'; } }
 function handleTopicSelection(event) { if (event.target.classList.contains('selection-btn')) { const topic = event.target.dataset.topic; startQuizForTopic(topic); } }
