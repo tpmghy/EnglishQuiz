@@ -28,6 +28,35 @@ body {
 }
 
 h1 { color: #333; font-size: 1.5em; min-height: 80px; }
+
+/* ▼▼▼ ここから追加 ▼▼▼ */
+#hint-area {
+    margin-bottom: 20px;
+}
+#hint-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+#hint-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+#hint-text {
+    background-color: #fffbe6; /* 薄い黄色 */
+    border: 1px solid #ffeeba;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 15px;
+    color: #856404;
+}
+/* ▲▲▲ ここまで追加 ▲▲▲ */
+
 #options-container { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
 
 .option-btn { background-color: #f8f9fa; border: 2px solid #dee2e6; border-radius: 8px; padding: 15px; font-size: 1em; cursor: pointer; transition: all 0.2s; }
@@ -45,24 +74,7 @@ h1 { color: #333; font-size: 1.5em; min-height: 80px; }
 .result-item.correct { background-color: #f1fff1; border-left: 5px solid #28a745; }
 .result-item.wrong { background-color: #fff1f1; border-left: 5px solid #dc3545; }
 
-/* ▼▼▼ ここから追加 ▼▼▼ */
-#share-container {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
-}
-.share-btn {
-    text-decoration: none; /* aタグの下線を消す */
-    display: inline-block;
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-size: 0.9em;
-    cursor: pointer;
-    margin: 5px;
-}
+#share-container { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
+.share-btn { text-decoration: none; display: inline-block; background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 0.9em; cursor: pointer; margin: 5px; }
 .share-btn:hover { background-color: #5a6268; }
 #copy-feedback { color: green; font-weight: bold; min-height: 20px; }
-/* ▲▲▲ ここまで追加 ▲▲▲ */
