@@ -2,9 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap');
 
 body {
-    /* フォントを読み込んだ 'M PLUS Rounded 1c' に変更 */
     font-family: 'M PLUS Rounded 1c', 'Helvetica Neue', Arial, sans-serif;
-    /* 美しいグラデーション背景に変更 */
     background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
     display: flex;
     justify-content: center;
@@ -19,8 +17,8 @@ body {
     top: 10px;
     right: 15px;
     font-size: 11px;
-    color: #f0f8ff; /* 背景に合わせて白っぽく */
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* 読みやすくするための影 */
+    color: #f0f8ff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
     text-align: right;
 }
 #version-info span {
@@ -28,8 +26,8 @@ body {
 }
 
 #quiz-container, #result-container {
-    background-color: rgba(255, 255, 255, 0.9); /* 少し透明感のある白 */
-    backdrop-filter: blur(10px); /* すりガラス効果 */
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
     padding: 30px 40px;
     border-radius: 20px;
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
@@ -39,40 +37,56 @@ body {
     text-align: center;
 }
 
-h1 { 
-    color: #1f3a69; 
-    font-size: 1.8em; 
-    min-height: 80px; 
-}
+h1 { color: #1f3a69; font-size: 1.8em; min-height: 80px; }
 
-/* --- ▼▼▼ ここからが今回のデザイン変更の最重要ポイント ▼▼▼ --- */
-
-/* 選択肢ボタン (大きく、おしゃれに) */
+/* 選択肢ボタン */
 .option-btn {
     background-color: #ffffff;
-    border: none; /* 枠線をなくし、影で立体感を出す */
+    border: 4px solid transparent; /* 縁取り用に透明な枠を確保 */
     border-radius: 15px;
-    padding: 20px; /* パディングを大きくしてボタン自体を大きく */
-    font-size: 1.2em; /* 文字を大きく */
-    font-weight: 700; /* 文字を太く */
+    padding: 16px; /* borderの分、少し調整 */
+    font-size: 1.2em;
+    font-weight: 700;
     color: #333;
     cursor: pointer;
     width: 100%;
     box-sizing: border-box;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* 立体感を出す影 */
-    transition: all 0.2s ease-in-out; /* アニメーションを滑らかに */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease-in-out;
 }
-
-/* マウスを乗せると少し浮き上がる演出 */
 .option-btn:hover:not(:disabled) {
     transform: translateY(-3px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
-/* ヒントボタン (選択肢と全く違うデザインに) */
+/* ▼▼▼ ここからが今回の修正の重要ポイント ▼▼▼ */
+
+/* 1. 自分が選んだ選択肢を黄色で縁取るスタイル */
+.option-btn.selected {
+    border-color: #ffc107; /* 黄色い縁取り */
+    box-shadow: 0 0 15px #ffc107; /* 黄色い光彩効果 */
+}
+
+/* 2. 正解の選択肢のスタイル (背景を緑に、文字を白に) */
+.option-btn.correct {
+    background-color: #28a745;
+    color: white;
+    border-color: #28a745; /* 縁取りも緑に統一 */
+}
+
+/* 3. 間違いの選択肢のスタイル (背景を赤に、文字を白に) */
+.option-btn.wrong {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545; /* 縁取りも赤に統一 */
+}
+/* ▲▲▲ ここまでが修正の重要ポイント ▲▲▲ */
+
+
+/* ヒントボタン */
 #hint-btn {
-    background: transparent; /* 背景を透明に */
-    border: 2px solid #6c757d; /* 枠線だけのボタンに */
+    background: transparent;
+    border: 2px solid #6c757d;
     color: #6c757d;
     padding: 8px 20px;
     border-radius: 20px;
@@ -82,20 +96,12 @@ h1 {
     margin-bottom: 25px;
     transition: all 0.2s ease-in-out;
 }
-#hint-btn:hover:not(:disabled) {
-    background: #6c757d;
-    color: white;
-}
-#hint-btn:disabled {
-    background-color: #ccc;
-    border-color: #ccc;
-    cursor: not-allowed;
-}
+#hint-btn:hover:not(:disabled) { background: #6c757d; color: white; }
+#hint-btn:disabled { background-color: #ccc; border-color: #ccc; cursor: not-allowed; }
 
-
-/* 「次の問題へ」「もう一度」などの主要なボタン */
+/* 主要なボタン */
 #next-btn, #retry-btn {
-    background: linear-gradient(45deg, #3d8bff, #ab7bff); /* グラデーション */
+    background: linear-gradient(45deg, #3d8bff, #ab7bff);
     color: white;
     border: none;
     padding: 15px 30px;
@@ -107,36 +113,13 @@ h1 {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     transition: all 0.2s ease-in-out;
 }
-#next-btn:hover, #retry-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-}
-
+#next-btn:hover, #retry-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); }
 
 /* 共有ボタン */
-.share-btn {
-    text-decoration: none;
-    display: inline-block;
-    background: #6c757d;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-size: 0.9em;
-    cursor: pointer;
-    margin: 5px;
-    transition: all 0.2s ease-in-out;
-}
-.share-btn:hover { 
-    background: #5a6268;
-    transform: translateY(-2px);
-}
-/* --- ▲▲▲ ここまでがデザイン変更のポイント ▲▲▲ --- */
+.share-btn { text-decoration: none; display: inline-block; background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-size: 0.9em; cursor: pointer; margin: 5px; transition: all 0.2s ease-in-out; }
+.share-btn:hover { background: #5a6268; transform: translateY(-2px); }
 
-
-#options-container { display: flex; flex-direction: column; gap: 15px; } /* ボタン間の余白を調整 */
-.option-btn.correct { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
-.option-btn.wrong { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+#options-container { display: flex; flex-direction: column; gap: 15px; }
 #feedback-container { min-height: 80px; margin-top: 20px; }
 #hint-text { background-color: #fffbe6; border: 1px solid #ffeeba; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 15px; color: #856404; font-weight: 700;}
 #explanation-text { background-color: #e9f7ff; padding: 15px; border-radius: 10px; text-align: left; margin-top: 10px; }

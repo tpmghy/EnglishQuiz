@@ -1,13 +1,12 @@
 // script.js
 
-const APP_VERSION = "v1.10"; // バージョンアップ！
+const APP_VERSION = "v1.11"; // バージョンアップ！
 
-// --- HTML要素を取得 ---
+// --- HTML要素を取得 (変更なし) ---
 const appVersionSpan = document.getElementById('app-version');
 const htmlVersionSpan = document.getElementById('html-version');
-const cssVersionSpan = document.getElementById('css-version');   // ▼▼▼ 追加 ▼▼▼
+const cssVersionSpan = document.getElementById('css-version');
 const csvVersionSpan = document.getElementById('csv-version');
-// ... (他の要素取得は変更なし) ...
 const questionText = document.getElementById('question-text');
 const optionsContainer = document.getElementById('options-container');
 const feedbackText = document.getElementById('feedback-text');
@@ -22,45 +21,33 @@ const hintText = document.getElementById('hint-text');
 const hintBtn = document.getElementById('hint-btn');
 const nextBtn = document.getElementById('next-btn');
 
-// --- グローバル変数を定義 ---
+// --- グローバル変数 (変更なし) ---
 let quizData = [];
 let currentQuestionIndex = 0;
 let score = 0;
 let sessionResults = [];
 
-// --- ファイルの最終更新日時を取得して表示する関数 ---
+// --- ファイル読み込み、初期化 (変更なし) ---
 async function displayFileVersions() {
     appVersionSpan.textContent = `App: ${APP_VERSION}`;
     try {
-        const htmlResponse = await fetch('index.html', { method: 'HEAD' });
-        const cssResponse = await fetch('style.css', { method: 'HEAD' }); // ▼▼▼ 追加 ▼▼▼
-        const csvResponse = await fetch('quiz.csv', { method: 'HEAD' });
-
-        const htmlLastModified = new Date(htmlResponse.headers.get('Last-Modified')).toLocaleString('ja-JP');
-        const cssLastModified = new Date(cssResponse.headers.get('Last-Modified')).toLocaleString('ja-JP'); // ▼▼▼ 追加 ▼▼▼
-        const csvLastModified = new Date(csvResponse.headers.get('Last-Modified')).toLocaleString('ja-JP');
-
-        htmlVersionSpan.textContent = `HTML: ${htmlLastModified}`;
-        cssVersionSpan.textContent = `CSS: ${cssLastModified}`; // ▼▼▼ 追加 ▼▼▼
-        csvVersionSpan.textContent = `CSV: ${csvLastModified}`;
-        
+        const headers = { method: 'HEAD', cache: 'no-cache' };
+        const htmlResponse = await fetch('index.html', headers);
+        const cssResponse = await fetch('style.css', headers);
+        const csvResponse = await fetch('quiz.csv', headers);
+        htmlVersionSpan.textContent = `HTML: ${new Date(htmlResponse.headers.get('Last-Modified')).toLocaleString('ja-JP')}`;
+        cssVersionSpan.textContent = `CSS: ${new Date(cssResponse.headers.get('Last-Modified')).toLocaleString('ja-JP')}`;
+        csvVersionSpan.textContent = `CSV: ${new Date(csvResponse.headers.get('Last-Modified')).toLocaleString('ja-JP')}`;
     } catch (error) {
         console.error("ファイルバージョンの取得に失敗:", error);
-        htmlVersionSpan.textContent = "HTML: 取得失敗";
-        cssVersionSpan.textContent = "CSS: 取得失敗"; // ▼▼▼ 追加 ▼▼▼
-        csvVersionSpan.textContent = "CSV: 取得失敗";
     }
 }
-
-// --- CSVファイルを読み込んで解析する関数 ---
 async function loadQuizData() {
-    // ... (この関数は変更なし) ...
     try {
-        const response = await fetch('quiz.csv');
+        const response = await fetch('quiz.csv', { cache: 'no-cache' });
         if (!response.ok) throw new Error('Network response was not ok.');
         const csvText = await response.text();
         const lines = csvText.trim().split('\n');
-        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
         const data = [];
         for (let i = 1; i < lines.length; i++) {
             if (lines[i].trim() === '') continue;
@@ -80,19 +67,16 @@ async function loadQuizData() {
         return [];
     }
 }
-
-// --- アプリケーションの初期化と開始 ---
 async function initializeApp() {
-    await displayFileVersions(); 
+    await displayFileVersions();
     hintBtn.addEventListener('click', showHint);
     nextBtn.addEventListener('click', handleNextButtonClick);
     quizData = await loadQuizData();
-    if (quizData.length > 0) {
-        startQuiz();
-    }
+    if (quizData.length > 0) startQuiz();
 }
 
-// --- (以降のゲームロジックは変更なし) ---
+// --- ゲームロジック (一部変更) ---
+
 function startQuiz() {
     currentQuestionIndex = 0;
     score = 0;
@@ -102,6 +86,7 @@ function startQuiz() {
     copyFeedback.textContent = '';
     showQuestion();
 }
+
 function showQuestion() {
     feedbackText.textContent = '';
     explanationText.style.display = 'none';
@@ -112,34 +97,77 @@ function showQuestion() {
     hintBtn.disabled = false;
     const currentQuestion = quizData[currentQuestionIndex];
     questionText.textContent = currentQuestion.question;
+
     currentQuestion.options.forEach(option => {
         const button = document.createElement('button');
         button.textContent = option;
         button.classList.add('option-btn');
-        button.addEventListener('click', () => selectAnswer(option));
+        // ▼▼▼ 変更点: クリック時にボタン要素自身も渡すように変更 ▼▼▼
+        button.addEventListener('click', (event) => selectAnswer(option, event.target));
         optionsContainer.appendChild(button);
     });
 }
+
 function showHint() {
     const currentQuestion = quizData[currentQuestionIndex];
     hintText.textContent = `ヒント: ${currentQuestion.hint}`;
     hintText.style.display = 'block';
     hintBtn.disabled = true;
 }
-function selectAnswer(selectedOption) {
-    const currentQuestion = quizData[currentQuestionIndex];
+
+// ▼▼▼ ここが今回の修正の最重要ポイント ▼▼▼
+function selectAnswer(selectedOption, selectedButton) {
+    // 1. まず、すべてのボタンを操作不能にし、ヒントボタンを隠す
     const optionButtons = document.querySelectorAll('.option-btn');
     optionButtons.forEach(btn => btn.disabled = true);
     hintBtn.style.display = 'none';
-    const isCorrect = selectedOption === currentQuestion.answer;
-    feedbackText.textContent = isCorrect ? "✅ 正解！" : "❌ 不正解...";
-    feedbackText.style.color = isCorrect ? 'green' : 'red';
-    if (isCorrect) score++;
-    sessionResults.push({ question: currentQuestion.question, userAnswer: selectedOption, correctAnswer: currentQuestion.answer, isCorrect: isCorrect });
-    explanationText.textContent = currentQuestion.explanation;
-    explanationText.style.display = 'block';
-    nextBtn.style.display = 'block';
+
+    // 2. 自分が選んだボタンを即座に黄色で縁取る
+    selectedButton.classList.add('selected');
+
+    // 3. 少し間を置いてから、正解・不正解の全体表示を行う (演出のため)
+    setTimeout(() => {
+        const currentQuestion = quizData[currentQuestionIndex];
+        const correctAnswer = currentQuestion.answer;
+        const isCorrect = selectedOption === correctAnswer;
+
+        // 全てのボタンをチェックし、正解・不正解の色をつける
+        optionButtons.forEach(button => {
+            if (button.textContent === correctAnswer) {
+                button.classList.add('correct');
+            } else {
+                button.classList.add('wrong');
+            }
+        });
+
+        // フィードバックとスコアの更新
+        if (isCorrect) {
+            feedbackText.textContent = "✅ 正解！";
+            feedbackText.style.color = 'green';
+            score++;
+        } else {
+            feedbackText.textContent = "❌ 不正解...";
+            feedbackText.style.color = 'red';
+        }
+        
+        // 結果を記録
+        sessionResults.push({
+            question: currentQuestion.question,
+            userAnswer: selectedOption,
+            correctAnswer: correctAnswer,
+            isCorrect: isCorrect
+        });
+
+        // 解説と「次の問題へ」ボタンを表示
+        explanationText.textContent = currentQuestion.explanation;
+        explanationText.style.display = 'block';
+        nextBtn.style.display = 'block';
+
+    }, 700); // 0.7秒後に結果を表示
 }
+// ▲▲▲ ここまでが修正の重要ポイント ▲▲▲
+
+
 function handleNextButtonClick() {
     currentQuestionIndex++;
     if (currentQuestionIndex < quizData.length) {
@@ -148,49 +176,10 @@ function handleNextButtonClick() {
         showResult();
     }
 }
-function generateResultsSummaryText() {
-    let summary = `クイズの結果: ${score} / ${quizData.length} 正解！\n\n`;
-    sessionResults.forEach((result, index) => {
-        const icon = result.isCorrect ? '✅' : '❌';
-        summary += `${icon} 問題 ${index + 1}: ${result.question}\n  あなたの回答: ${result.userAnswer}\n`;
-        if (!result.isCorrect) summary += `  正解: ${result.correctAnswer}\n`;
-        summary += '\n';
-    });
-    return summary;
-}
-function showResult() {
-    quizContainer.style.display = 'none';
-    resultContainer.style.display = 'block';
-    scoreText.textContent = score;
-    totalText.textContent = quizData.length;
-    detailedResultsList.innerHTML = '';
-    sessionResults.forEach((result, index) => {
-        const resultItem = document.createElement('div');
-        resultItem.classList.add('result-item', result.isCorrect ? 'correct' : 'wrong');
-        let resultHTML = `<p><strong>問題 ${index + 1}:</strong> ${result.question}</p><p>あなたの回答: ${result.userAnswer}</p>`;
-        if (!result.isCorrect) resultHTML += `<p>正解: ${result.correctAnswer}</p>`;
-        resultItem.innerHTML = resultHTML;
-        detailedResultsList.appendChild(resultItem);
-    });
-}
-resultContainer.addEventListener('click', (event) => {
-    const target = event.target;
-    const summaryText = generateResultsSummaryText();
-    if (target.id === 'share-btn') {
-        if (navigator.share) {
-            navigator.share({ title: 'クイズの結果', text: summaryText }).catch(error => console.log('Share failed:', error));
-        } else {
-            alert('お使いのブラウザは共有機能に対応していません。');
-        }
-    } else if (target.id === 'copy-btn') {
-        navigator.clipboard.writeText(summaryText).then(() => { copyFeedback.textContent = 'コピーしました！'; }).catch(err => { copyFeedback.textContent = 'コピーに失敗しました'; });
-    } else if (target.closest('#email-btn')) {
-        const mailBody = encodeURIComponent(summaryText);
-        target.href = `mailto:?subject=クイズの結果&body=${mailBody}`;
-    } else if (target.id === 'retry-btn') {
-        startQuiz();
-    }
-});
 
-// --- アプリケーションを開始 ---
+// --- (以降の関数に変更はありません) ---
+function generateResultsSummaryText() { let summary = `クイズの結果: ${score} / ${quizData.length} 正解！\n\n`; sessionResults.forEach((result, index) => { const icon = result.isCorrect ? '✅' : '❌'; summary += `${icon} 問題 ${index + 1}: ${result.question}\n  あなたの回答: ${result.userAnswer}\n`; if (!result.isCorrect) summary += `  正解: ${result.correctAnswer}\n`; summary += '\n'; }); return summary; }
+function showResult() { quizContainer.style.display = 'none'; resultContainer.style.display = 'block'; scoreText.textContent = score; totalText.textContent = quizData.length; detailedResultsList.innerHTML = ''; sessionResults.forEach((result, index) => { const resultItem = document.createElement('div'); resultItem.classList.add('result-item', result.isCorrect ? 'correct' : 'wrong'); let resultHTML = `<p><strong>問題 ${index + 1}:</strong> ${result.question}</p><p>あなたの回答: ${result.userAnswer}</p>`; if (!result.isCorrect) resultHTML += `<p>正解: ${result.correctAnswer}</p>`; resultItem.innerHTML = resultHTML; detailedResultsList.appendChild(resultItem); }); }
+resultContainer.addEventListener('click', (event) => { const target = event.target; const summaryText = generateResultsSummaryText(); if (target.id === 'share-btn') { if (navigator.share) { navigator.share({ title: 'クイズの結果', text: summaryText }).catch(error => console.log('Share failed:', error)); } else { alert('お使いのブラウザは共有機能に対応していません。'); } } else if (target.id === 'copy-btn') { navigator.clipboard.writeText(summaryText).then(() => { copyFeedback.textContent = 'コピーしました！'; }).catch(err => { copyFeedback.textContent = 'コピーに失敗しました'; }); } else if (target.closest('#email-btn')) { const mailBody = encodeURIComponent(summaryText); target.href = `mailto:?subject=クイズの結果&body=${mailBody}`; } else if (target.id === 'retry-btn') { startQuiz(); } });
+
 initializeApp();
