@@ -1,4 +1,3 @@
-/* Google Fontsから美しいフォントを読み込み */
 @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap');
 
 body {
@@ -12,20 +11,10 @@ body {
     padding: 20px 0;
 }
 
-#version-info {
-    position: fixed;
-    top: 10px;
-    right: 15px;
-    font-size: 11px;
-    color: #f0f8ff;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-    text-align: right;
-}
-#version-info span {
-    display: block;
-}
+#version-info { position: fixed; top: 10px; right: 15px; font-size: 11px; color: #f0f8ff; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); text-align: right; }
+#version-info span { display: block; }
 
-#quiz-container, #result-container {
+#quiz-container, #result-container, #selection-container {
     background-color: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(10px);
     padding: 30px 40px;
@@ -39,83 +28,36 @@ body {
 
 h1 { color: #1f3a69; font-size: 1.8em; min-height: 80px; }
 
-/* 選択肢ボタン */
-.option-btn {
-    background-color: #ffffff;
-    border: 4px solid transparent; /* 縁取り用に透明な枠を確保 */
-    border-radius: 15px;
-    padding: 16px; /* borderの分、少し調整 */
-    font-size: 1.2em;
-    font-weight: 700;
-    color: #333;
-    cursor: pointer;
-    width: 100%;
-    box-sizing: border-box;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    transition: all 0.2s ease-in-out;
-}
-.option-btn:hover:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-}
-
-/* ▼▼▼ ここからが今回の修正の重要ポイント ▼▼▼ */
-
-/* 1. 自分が選んだ選択肢を黄色で縁取るスタイル */
-.option-btn.selected {
-    border-color: #ffc107; /* 黄色い縁取り */
-    box-shadow: 0 0 15px #ffc107; /* 黄色い光彩効果 */
-}
-
-/* 2. 正解の選択肢のスタイル (背景を緑に、文字を白に) */
-.option-btn.correct {
-    background-color: #28a745;
-    color: white;
-    border-color: #28a745; /* 縁取りも緑に統一 */
-}
-
-/* 3. 間違いの選択肢のスタイル (背景を赤に、文字を白に) */
-.option-btn.wrong {
-    background-color: #dc3545;
-    color: white;
-    border-color: #dc3545; /* 縁取りも赤に統一 */
-}
-/* ▲▲▲ ここまでが修正の重要ポイント ▲▲▲ */
-
-
-/* ヒントボタン */
-#hint-btn {
-    background: transparent;
-    border: 2px solid #6c757d;
-    color: #6c757d;
-    padding: 8px 20px;
-    border-radius: 20px;
-    font-size: 0.9em;
-    font-weight: 700;
-    cursor: pointer;
-    margin-bottom: 25px;
-    transition: all 0.2s ease-in-out;
-}
-#hint-btn:hover:not(:disabled) { background: #6c757d; color: white; }
-#hint-btn:disabled { background-color: #ccc; border-color: #ccc; cursor: not-allowed; }
-
-/* 主要なボタン */
-#next-btn, #retry-btn {
-    background: linear-gradient(45deg, #3d8bff, #ab7bff);
+.selection-btn {
+    background: linear-gradient(45deg, #11998e, #38ef7d);
     color: white;
     border: none;
-    padding: 15px 30px;
+    padding: 20px 30px;
     border-radius: 15px;
-    font-size: 1.1em;
+    font-size: 1.3em;
     font-weight: 700;
     cursor: pointer;
-    margin-top: 20px;
+    margin: 10px;
+    width: 100%;
+    box-sizing: border-box;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     transition: all 0.2s ease-in-out;
 }
+.selection-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2); }
+
+.option-btn { background-color: #ffffff; border: 4px solid transparent; border-radius: 15px; padding: 16px; font-size: 1.2em; font-weight: 700; color: #333; cursor: pointer; width: 100%; box-sizing: border-box; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); transition: all 0.2s ease-in-out; }
+.option-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12); }
+.option-btn.selected { border-color: #ffc107; box-shadow: 0 0 15px #ffc107; }
+.option-btn.correct { background-color: #28a745; color: white; border-color: #28a745; }
+.option-btn.wrong { background-color: #dc3545; color: white; border-color: #dc3545; }
+
+#hint-btn { background: transparent; border: 2px solid #6c757d; color: #6c757d; padding: 8px 20px; border-radius: 20px; font-size: 0.9em; font-weight: 700; cursor: pointer; margin-bottom: 25px; transition: all 0.2s ease-in-out; }
+#hint-btn:hover:not(:disabled) { background: #6c757d; color: white; }
+#hint-btn:disabled { background-color: #ccc; border-color: #ccc; cursor: not-allowed; }
+
+#next-btn, #retry-btn { background: linear-gradient(45deg, #3d8bff, #ab7bff); color: white; border: none; padding: 15px 30px; border-radius: 15px; font-size: 1.1em; font-weight: 700; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); transition: all 0.2s ease-in-out; }
 #next-btn:hover, #retry-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); }
 
-/* 共有ボタン */
 .share-btn { text-decoration: none; display: inline-block; background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-size: 0.9em; cursor: pointer; margin: 5px; transition: all 0.2s ease-in-out; }
 .share-btn:hover { background: #5a6268; transform: translateY(-2px); }
 

@@ -1,6 +1,6 @@
 // script.js
 
-const APP_VERSION = "v1.15 (Final)"; // 最終修正バージョン
+const APP_VERSION = "v2.0 (Stable)"; // 安定版
 
 // --- HTML要素を取得 ---
 const appVersionSpan = document.getElementById('app-version');
@@ -43,32 +43,15 @@ async function displayFileVersions() {
     } catch (error) { console.error("ファイルバージョンの取得に失敗:", error); }
 }
 
-// --- ▼▼▼ ここからが今回の修正の最重要ポイント ▼▼▼ ---
-// CSVファイルをより安全に、正規表現を使って解析する関数
+// --- CSVファイルを安全に解析 ---
 function parseCSV(text) {
     const data = [];
-    // 1. テキストを行に分割し、空行やコメント行を最初に取り除く
     const lines = text.trim().split('\n').filter(line => line.trim() !== '' && !line.trim().startsWith('#'));
-    
-    if (lines.length < 2) {
-        console.error("CSVファイルが空か、ヘッダーしかありません。");
-        return [];
-    }
-    
-    // 2. ヘッダー行を安全に取得
+    if (lines.length < 2) { console.error("CSVファイルが空か、ヘッダーしかありません。"); return []; }
     const headers = lines.shift().split(',').map(h => h.trim().toLowerCase());
-
-    // 3. データ行を1行ずつ安全に処理
     lines.forEach((line, index) => {
-        // 正規表現を使って、引用符で囲まれたカンマを無視して分割する
-        const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
-        const values = line.split(regex);
-
-        if (values.length !== headers.length) {
-            console.warn(`CSVの ${index + 2} 行目は列の数が合わないためスキップしました:`, line);
-            return; // 次のループへ
-        }
-
+        const values = line.split(',');
+        if (values.length !== headers.length) { console.warn(`CSVの ${index + 2} 行目は列の数が合わないためスキップしました:`, line); return; }
         const entry = {};
         entry.topic = values[0].trim().replace(/^"|"$/g, '');
         entry.question = values[1].trim().replace(/^"|"$/g, '');
@@ -80,36 +63,25 @@ function parseCSV(text) {
     });
     return data;
 }
-
 async function loadAllQuizData() {
     try {
         const response = await fetch('quiz.csv', { cache: 'no-cache' });
         if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
         const csvText = await response.text();
-        
-        // 新しい安全なパーサーを呼び出す
         const parsedData = parseCSV(csvText);
-
-        if (parsedData.length === 0) {
-            throw new Error("CSVの解析後、有効なデータが0件でした。ファイルの内容を確認してください。");
-        }
-        
+        if (parsedData.length === 0) throw new Error("CSVの解析後、有効なデータが0件でした。ファイルの内容を確認してください。");
         return parsedData;
-
     } catch (error) {
         console.error('Failed to load quiz data:', error);
         selectionContainer.innerHTML = `<h1>クイズデータの読み込みに失敗しました。</h1><p style="color:red;">エラー: ${error.message}</p>`;
         return [];
     }
 }
-// --- ▲▲▲ ここまでが修正の最重要ポイント ▲▲▲ ---
-
 
 // --- アプリケーションの初期化と画面遷移 ---
 async function initializeApp() {
     await displayFileVersions();
     allQuestions = await loadAllQuizData();
-    // 読み込みに成功した場合のみ、イベントリスナーを設定
     if (allQuestions.length > 0) {
         selectionContainer.addEventListener('click', handleTopicSelection);
         hintBtn.addEventListener('click', showHint);
@@ -118,22 +90,14 @@ async function initializeApp() {
         showSelectionScreen();
     }
 }
-function showSelectionScreen() {
-    quizContainer.style.display = 'none';
-    resultContainer.style.display = 'none';
-    selectionContainer.style.display = 'block';
-}
+function showSelectionScreen() { quizContainer.style.display = 'none'; resultContainer.style.display = 'none'; selectionContainer.style.display = 'block'; }
 function startQuizForTopic(topic) {
     quizData = allQuestions.filter(question => question.topic === topic);
-    if (quizData.length > 0) {
-        selectionContainer.style.display = 'none';
-        startQuiz();
-    } else {
-        alert("この単元の問題が見つかりませんでした。");
-    }
+    if (quizData.length > 0) { selectionContainer.style.display = 'none'; startQuiz(); } 
+    else { alert("この単元の問題が見つかりませんでした。"); }
 }
 
-// --- ゲームロジック (以降の関数は変更なし) ---
+// --- ゲームロジック ---
 function startQuiz() { currentQuestionIndex = 0; score = 0; sessionResults = []; quizContainer.style.display = 'block'; resultContainer.style.display = 'none'; copyFeedback.textContent = ''; showQuestion(); }
 function showQuestion() { feedbackText.textContent = ''; explanationText.style.display = 'none'; nextBtn.style.display = 'none'; optionsContainer.innerHTML = ''; hintText.style.display = 'none'; hintBtn.style.display = 'block'; hintBtn.disabled = false; const currentQuestion = quizData[currentQuestionIndex]; questionText.textContent = currentQuestion.question; currentQuestion.options.forEach(option => { const button = document.createElement('button'); button.textContent = option; button.classList.add('option-btn'); button.addEventListener('click', (event) => selectAnswer(option, event.target)); optionsContainer.appendChild(button); }); }
 function showHint() { const currentQuestion = quizData[currentQuestionIndex]; hintText.textContent = `ヒント: ${currentQuestion.hint}`; hintText.style.display = 'block'; hintBtn.disabled = true; }
