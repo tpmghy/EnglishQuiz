@@ -72,3 +72,14 @@ h1 { color: #1f3a69; font-size: 1.8em; min-height: 80px; }
 .result-item.wrong { background-color: #fff1f1; border-left: 5px solid #dc3545; }
 #share-container { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
 #copy-feedback { color: #28a745; font-weight: 700; min-height: 20px; }
+
+/* ▼▼▼ ここから追加 ▼▼▼ */
+.hint-indicator {
+    font-size: 0.8em;
+    color: #6c757d;
+    font-style: italic;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dotted #ccc; /* 区切り線 */
+}
+/* ▲▲▲ ここまで追加 ▲▲▲ */
