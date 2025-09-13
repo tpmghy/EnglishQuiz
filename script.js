@@ -1,9 +1,12 @@
 // script.js
 
-const APP_VERSION = "v1.8"; // バージョンアップ！
+const APP_VERSION = "v1.9"; // バージョンアップ！
 
 // --- HTML要素を取得 ---
-const versionInfo = document.getElementById('version-info');
+const appVersionSpan = document.getElementById('app-version'); // 変更
+const htmlVersionSpan = document.getElementById('html-version'); // 追加
+const csvVersionSpan = document.getElementById('csv-version');   // 追加
+// ... (他の要素取得は変更なし) ...
 const questionText = document.getElementById('question-text');
 const optionsContainer = document.getElementById('options-container');
 const feedbackText = document.getElementById('feedback-text');
@@ -15,9 +18,9 @@ const totalText = document.getElementById('total-text');
 const detailedResultsList = document.getElementById('detailed-results-list');
 const copyFeedback = document.getElementById('copy-feedback');
 const hintText = document.getElementById('hint-text');
-// ▼▼▼ 変更点: ボタンを再度ここで取得します ▼▼▼
 const hintBtn = document.getElementById('hint-btn');
 const nextBtn = document.getElementById('next-btn');
+
 
 // --- グローバル変数を定義 ---
 let quizData = [];
@@ -25,8 +28,33 @@ let currentQuestionIndex = 0;
 let score = 0;
 let sessionResults = [];
 
+// ▼▼▼ ここから新しい関数を追加 ▼▼▼
+// --- ファイルの最終更新日時を取得して表示する関数 ---
+async function displayFileVersions() {
+    appVersionSpan.textContent = `App: ${APP_VERSION}`;
+    try {
+        // HEADリクエストを使い、ヘッダー情報だけを効率的に取得
+        const htmlResponse = await fetch('index.html', { method: 'HEAD' });
+        const csvResponse = await fetch('quiz.csv', { method: 'HEAD' });
+
+        // Last-Modifiedヘッダーから日付を取得し、見やすい形式に変換
+        const htmlLastModified = new Date(htmlResponse.headers.get('Last-Modified')).toLocaleString('ja-JP');
+        const csvLastModified = new Date(csvResponse.headers.get('Last-Modified')).toLocaleString('ja-JP');
+
+        htmlVersionSpan.textContent = `HTML: ${htmlLastModified}`;
+        csvVersionSpan.textContent = `CSV: ${csvLastModified}`;
+        
+    } catch (error) {
+        console.error("ファイルバージョンの取得に失敗:", error);
+        htmlVersionSpan.textContent = "HTML: 取得失敗";
+        csvVersionSpan.textContent = "CSV: 取得失敗";
+    }
+}
+// ▲▲▲ ここまで新しい関数 ▲▲▲
+
 // --- CSVファイルを読み込んで解析する関数 ---
 async function loadQuizData() {
+    // ... (この関数は変更なし) ...
     try {
         const response = await fetch('quiz.csv');
         if (!response.ok) throw new Error('Network response was not ok.');
@@ -55,9 +83,9 @@ async function loadQuizData() {
 
 // --- アプリケーションの初期化と開始 ---
 async function initializeApp() {
-    versionInfo.textContent = APP_VERSION;
-    
-    // ▼▼▼ 変更点: 静的なボタンには、ここで直接イベントリスナーを設定します ▼▼▼
+    // ▼▼▼ 変更点 ▼▼▼
+    await displayFileVersions(); // ファイルバージョンの表示を待つ
+
     hintBtn.addEventListener('click', showHint);
     nextBtn.addEventListener('click', handleNextButtonClick);
 
@@ -67,8 +95,7 @@ async function initializeApp() {
     }
 }
 
-// --- ゲームロジック ---
-
+// --- (以降のゲームロジックは変更なし) ---
 function startQuiz() {
     currentQuestionIndex = 0;
     score = 0;
@@ -78,57 +105,44 @@ function startQuiz() {
     copyFeedback.textContent = '';
     showQuestion();
 }
-
 function showQuestion() {
     feedbackText.textContent = '';
     explanationText.style.display = 'none';
     nextBtn.style.display = 'none';
     optionsContainer.innerHTML = '';
-    
     hintText.style.display = 'none';
     hintBtn.style.display = 'block';
     hintBtn.disabled = false;
-
     const currentQuestion = quizData[currentQuestionIndex];
     questionText.textContent = currentQuestion.question;
-
     currentQuestion.options.forEach(option => {
         const button = document.createElement('button');
         button.textContent = option;
         button.classList.add('option-btn');
-        // ▼▼▼ 変更点: 動的なボタンには、ここで直接イベントを設定します ▼▼▼
         button.addEventListener('click', () => selectAnswer(option));
         optionsContainer.appendChild(button);
     });
 }
-
 function showHint() {
     const currentQuestion = quizData[currentQuestionIndex];
     hintText.textContent = `ヒント: ${currentQuestion.hint}`;
     hintText.style.display = 'block';
     hintBtn.disabled = true;
 }
-
 function selectAnswer(selectedOption) {
     const currentQuestion = quizData[currentQuestionIndex];
     const optionButtons = document.querySelectorAll('.option-btn');
     optionButtons.forEach(btn => btn.disabled = true);
-    
     hintBtn.style.display = 'none';
-
     const isCorrect = selectedOption === currentQuestion.answer;
     feedbackText.textContent = isCorrect ? "✅ 正解！" : "❌ 不正解...";
     feedbackText.style.color = isCorrect ? 'green' : 'red';
     if (isCorrect) score++;
-    
     sessionResults.push({ question: currentQuestion.question, userAnswer: selectedOption, correctAnswer: currentQuestion.answer, isCorrect: isCorrect });
-    
     explanationText.textContent = currentQuestion.explanation;
     explanationText.style.display = 'block';
     nextBtn.style.display = 'block';
 }
-
-// ▼▼▼ 変更点: 「次の問題へ」ボタンの処理を独立した関数にしました ▼▼▼
 function handleNextButtonClick() {
     currentQuestionIndex++;
     if (currentQuestionIndex < quizData.length) {
@@ -137,7 +151,6 @@ function handleNextButtonClick() {
         showResult();
     }
 }
-
 function generateResultsSummaryText() {
     let summary = `クイズの結果: ${score} / ${quizData.length} 正解！\n\n`;
     sessionResults.forEach((result, index) => {
@@ -148,7 +161,6 @@ function generateResultsSummaryText() {
     });
     return summary;
 }
-
 function showResult() {
     quizContainer.style.display = 'none';
     resultContainer.style.display = 'block';
@@ -164,12 +176,9 @@ function showResult() {
         detailedResultsList.appendChild(resultItem);
     });
 }
-
-// 結果画面の操作は、イベント委譲のままにしておきます（こちらは問題なく動作するため）
 resultContainer.addEventListener('click', (event) => {
     const target = event.target;
     const summaryText = generateResultsSummaryText();
-
     if (target.id === 'share-btn') {
         if (navigator.share) {
             navigator.share({ title: 'クイズの結果', text: summaryText }).catch(error => console.log('Share failed:', error));
