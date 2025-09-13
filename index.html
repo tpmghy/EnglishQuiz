@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript クイズゲーム</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="quiz-container">
+        <h1 id="question-text">ここに問題文が表示されます</h1>
+        <div id="options-container">
+            <!-- 選択肢ボタンはJavaScriptで生成します -->
+        </div>
+        <div id="feedback-container">
+            <p id="feedback-text"></p>
+            <p id="explanation-text"></p>
+        </div>
+        <button id="next-btn" style="display: none;">次の問題へ</button>
+    </div>
+    
+    <div id="result-container" style="display: none;">
+        <h2>クイズ終了！</h2>
+        <p>あなたのスコアは <span id="score-text">0</span> / <span id="total-text">0</span> です。</p>
+        <button id="retry-btn">もう一度挑戦する</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
