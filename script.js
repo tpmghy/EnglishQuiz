@@ -1,8 +1,8 @@
 // script.js
 
-const APP_VERSION = "v1.14"; // 最終修正バージョン
+const APP_VERSION = "v1.15 (Final)"; // 最終修正バージョン
 
-// --- HTML要素を取得 (変更なし) ---
+// --- HTML要素を取得 ---
 const appVersionSpan = document.getElementById('app-version');
 const htmlVersionSpan = document.getElementById('html-version');
 const cssVersionSpan = document.getElementById('css-version');
@@ -22,14 +22,14 @@ const hintText = document.getElementById('hint-text');
 const hintBtn = document.getElementById('hint-btn');
 const nextBtn = document.getElementById('next-btn');
 
-// --- グローバル変数 (変更なし) ---
+// --- グローバル変数 ---
 let allQuestions = [];
 let quizData = [];
 let currentQuestionIndex = 0;
 let score = 0;
 let sessionResults = [];
 
-// --- ファイルの最終更新日時を取得して表示する関数 (変更なし) ---
+// --- ファイルの最終更新日時を取得して表示 ---
 async function displayFileVersions() {
     appVersionSpan.textContent = `App: ${APP_VERSION}`;
     try {
@@ -44,65 +44,79 @@ async function displayFileVersions() {
 }
 
 // --- ▼▼▼ ここからが今回の修正の最重要ポイント ▼▼▼ ---
-// CSVファイルをより安全に読み込んで解析する関数
+// CSVファイルをより安全に、正規表現を使って解析する関数
+function parseCSV(text) {
+    const data = [];
+    // 1. テキストを行に分割し、空行やコメント行を最初に取り除く
+    const lines = text.trim().split('\n').filter(line => line.trim() !== '' && !line.trim().startsWith('#'));
+    
+    if (lines.length < 2) {
+        console.error("CSVファイルが空か、ヘッダーしかありません。");
+        return [];
+    }
+    
+    // 2. ヘッダー行を安全に取得
+    const headers = lines.shift().split(',').map(h => h.trim().toLowerCase());
+
+    // 3. データ行を1行ずつ安全に処理
+    lines.forEach((line, index) => {
+        // 正規表現を使って、引用符で囲まれたカンマを無視して分割する
+        const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+        const values = line.split(regex);
+
+        if (values.length !== headers.length) {
+            console.warn(`CSVの ${index + 2} 行目は列の数が合わないためスキップしました:`, line);
+            return; // 次のループへ
+        }
+
+        const entry = {};
+        entry.topic = values[0].trim().replace(/^"|"$/g, '');
+        entry.question = values[1].trim().replace(/^"|"$/g, '');
+        entry.options = values[2].trim().replace(/^"|"$/g, '').split('|');
+        entry.answer = values[3].trim().replace(/^"|"$/g, '');
+        entry.explanation = values[4].trim().replace(/^"|"$/g, '');
+        entry.hint = values[5] ? values[5].trim().replace(/^"|"$/g, '') : "この問題のヒントはありません。";
+        data.push(entry);
+    });
+    return data;
+}
+
 async function loadAllQuizData() {
     try {
         const response = await fetch('quiz.csv', { cache: 'no-cache' });
-        if (!response.ok) throw new Error('Network response was not ok.');
+        if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
         const csvText = await response.text();
         
-        // 1. テキストを行に分割し、空行を最初に取り除く
-        const lines = csvText.trim().split('\n').filter(line => line.trim() !== '');
-        
-        if (lines.length < 2) {
-            // ヘッダー行とデータ行がなければ、処理を中断
-            console.error("CSVファイルが空か、ヘッダーしかありません。");
-            return [];
+        // 新しい安全なパーサーを呼び出す
+        const parsedData = parseCSV(csvText);
+
+        if (parsedData.length === 0) {
+            throw new Error("CSVの解析後、有効なデータが0件でした。ファイルの内容を確認してください。");
         }
         
-        const data = [];
-        // 2. ヘッダー行を安全に取得
-        const headers = lines.shift().split(',').map(h => h.trim().toLowerCase());
-
-        // 3. データ行を1行ずつ安全に処理
-        lines.forEach(line => {
-            const values = line.split(',');
-            // 列の数がヘッダーと合わない行はスキップする
-            if (values.length !== headers.length) {
-                console.warn("CSVの不正な行をスキップしました:", line);
-                return; // forEachの次のループへ
-            }
-
-            const entry = {};
-            entry.topic = values[0].trim().replace(/"/g, '');
-            entry.question = values[1].trim().replace(/"/g, '');
-            entry.options = values[2].trim().replace(/"/g, '').split('|');
-            entry.answer = values[3].trim().replace(/"/g, '');
-            entry.explanation = values[4].trim().replace(/"/g, '');
-            entry.hint = values[5] ? values[5].trim().replace(/"/g, '') : "この問題のヒントはありません。";
-            data.push(entry);
-        });
-        
-        return data;
+        return parsedData;
 
     } catch (error) {
         console.error('Failed to load quiz data:', error);
-        selectionContainer.innerHTML = "<h1>クイズデータの読み込みに失敗しました。</h1>";
+        selectionContainer.innerHTML = `<h1>クイズデータの読み込みに失敗しました。</h1><p style="color:red;">エラー: ${error.message}</p>`;
         return [];
     }
 }
 // --- ▲▲▲ ここまでが修正の最重要ポイント ▲▲▲ ---
 
 
-// --- アプリケーションの初期化と画面遷移 (変更なし) ---
+// --- アプリケーションの初期化と画面遷移 ---
 async function initializeApp() {
     await displayFileVersions();
     allQuestions = await loadAllQuizData();
-    selectionContainer.addEventListener('click', handleTopicSelection);
-    hintBtn.addEventListener('click', showHint);
-    nextBtn.addEventListener('click', handleNextButtonClick);
-    resultContainer.addEventListener('click', handleResultScreenClick);
-    showSelectionScreen();
+    // 読み込みに成功した場合のみ、イベントリスナーを設定
+    if (allQuestions.length > 0) {
+        selectionContainer.addEventListener('click', handleTopicSelection);
+        hintBtn.addEventListener('click', showHint);
+        nextBtn.addEventListener('click', handleNextButtonClick);
+        resultContainer.addEventListener('click', handleResultScreenClick);
+        showSelectionScreen();
+    }
 }
 function showSelectionScreen() {
     quizContainer.style.display = 'none';
