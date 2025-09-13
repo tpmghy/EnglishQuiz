@@ -7,7 +7,7 @@ let appVersionSpan, htmlVersionSpan, cssVersionSpan, csvVersionSpan,
     selectionContainer, quizContainer, resultContainer,
     questionText, optionsContainer, feedbackText, explanationText,
     scoreText, totalText, detailedResultsList, copyFeedback,
-    hintText, hintBtn, nextBtn, reviewBtn;
+    hintText, hintBtn, nextBtn, reviewBtn, currentTopicName;
 
 // --- グローバル変数 ---
 let allQuestions = [];
@@ -40,6 +40,7 @@ window.addEventListener('DOMContentLoaded', () => {
     hintBtn = document.getElementById('hint-btn');
     nextBtn = document.getElementById('next-btn');
     reviewBtn = document.getElementById('review-btn');
+    currentTopicName = document.getElementById('current-topic-name');
 
     // アプリケーションの初期化を開始
     initializeApp();
@@ -111,9 +112,37 @@ async function loadAllQuizData() {
 }
 
 function showSelectionScreen() { quizContainer.style.display = 'none'; resultContainer.style.display = 'none'; selectionContainer.style.display = 'block'; }
-function startQuizForTopic(topic) { quizData = allQuestions.filter(question => question.topic === topic); if (quizData.length > 0) { selectionContainer.style.display = 'none'; startQuiz(); } else { alert("この単元の問題が見つかりませんでした。"); } }
+
+// 単元名を設定する関数
+function setTopicName(topic) {
+    const topicNames = {
+        'iamyouare': 'I am / You are',
+        'heshe': 'He / She'
+    };
+    if (currentTopicName) {
+        currentTopicName.textContent = topicNames[topic] || topic;
+    }
+}
+function startQuizForTopic(topic) { 
+    quizData = allQuestions.filter(question => question.topic === topic); 
+    if (quizData.length > 0) { 
+        // 単元名を設定
+        setTopicName(topic);
+        selectionContainer.style.display = 'none'; 
+        startQuiz(); 
+    } else { 
+        alert("この単元の問題が見つかりませんでした。"); 
+    } 
+}
 function startQuiz() { currentQuestionIndex = 0; score = 0; sessionResults = []; quizContainer.style.display = 'block'; resultContainer.style.display = 'none'; copyFeedback.textContent = ''; showQuestion(); }
-function startReviewQuiz(reviewQuestions) { quizData = reviewQuestions; startQuiz(); }
+function startReviewQuiz(reviewQuestions) { 
+    quizData = reviewQuestions; 
+    // 復習クイズの場合は単元名を「復習」に設定
+    if (currentTopicName) {
+        currentTopicName.textContent = '復習';
+    }
+    startQuiz(); 
+}
 function showQuestion() { feedbackText.textContent = ''; explanationText.style.display = 'none'; nextBtn.style.display = 'none'; optionsContainer.innerHTML = ''; hintText.style.display = 'none'; hintBtn.style.display = 'block'; hintBtn.disabled = false; hintWasViewedForCurrentQuestion = false; const currentQuestion = quizData[currentQuestionIndex]; questionText.textContent = currentQuestion.question; currentQuestion.options.forEach(option => { const button = document.createElement('button'); button.textContent = option; button.classList.add('option-btn'); button.addEventListener('click', (event) => selectAnswer(option, event.target)); optionsContainer.appendChild(button); }); }
 function showHint() { const currentQuestion = quizData[currentQuestionIndex]; hintText.textContent = `ヒント: ${currentQuestion.hint}`; hintText.style.display = 'block'; hintBtn.disabled = true; hintWasViewedForCurrentQuestion = true; }
 function selectAnswer(selectedOption, selectedButton) { const optionButtons = document.querySelectorAll('.option-btn'); optionButtons.forEach(btn => btn.disabled = true); hintBtn.style.display = 'none'; selectedButton.classList.add('selected'); setTimeout(() => { const currentQuestion = quizData[currentQuestionIndex]; const correctAnswer = currentQuestion.answer; const isCorrect = selectedOption === correctAnswer; optionButtons.forEach(button => { if (button.textContent === correctAnswer) button.classList.add('correct'); else button.classList.add('wrong'); }); feedbackText.textContent = isCorrect ? "✅ 正解！" : "❌ 不正解..."; feedbackText.style.color = isCorrect ? 'green' : 'red'; if (isCorrect) score++; sessionResults.push({ question: currentQuestion.question, userAnswer: selectedOption, correctAnswer: correctAnswer, isCorrect: isCorrect, hintViewed: hintWasViewedForCurrentQuestion }); explanationText.textContent = currentQuestion.explanation; explanationText.style.display = 'block'; nextBtn.style.display = 'block'; }, 700); }

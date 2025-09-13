@@ -203,3 +203,20 @@ h1 {
     padding-top: 8px;
     border-top: 1px dotted #ccc;
 }
+
+/* 単元名表示のスタイル */
+#topic-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 20px;
+    margin: -30px -40px 20px -40px;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+#current-topic-name {
+    margin: 0;
+    font-size: 1.4em;
+    font-weight: 700;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
