@@ -1,6 +1,6 @@
 // script.js
 
-const APP_VERSION = "v1.6"; // バージョンアップ！
+const APP_VERSION = "v1.7"; // バージョンアップ！
 
 // --- HTML要素を取得 ---
 const versionInfo = document.getElementById('version-info');
@@ -8,17 +8,13 @@ const questionText = document.getElementById('question-text');
 const optionsContainer = document.getElementById('options-container');
 const feedbackText = document.getElementById('feedback-text');
 const explanationText = document.getElementById('explanation-text');
-const nextBtn = document.getElementById('next-btn');
 const quizContainer = document.getElementById('quiz-container');
 const resultContainer = document.getElementById('result-container');
 const scoreText = document.getElementById('score-text');
 const totalText = document.getElementById('total-text');
 const detailedResultsList = document.getElementById('detailed-results-list');
 const copyFeedback = document.getElementById('copy-feedback');
-// ▼▼▼ ここから追加 ▼▼▼
-const hintBtn = document.getElementById('hint-btn');
 const hintText = document.getElementById('hint-text');
-// ▲▲▲ ここまで追加 ▲▲▲
 
 // --- グローバル変数を定義 ---
 let quizData = [];
@@ -33,16 +29,20 @@ async function loadQuizData() {
         if (!response.ok) throw new Error('Network response was not ok.');
         const csvText = await response.text();
         const lines = csvText.trim().split('\n');
-        const headers = lines[0].split(',').map(h => h.trim());
+        // ヘッダー行を小文字にして空白を除去し、より堅牢にする
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
         const data = [];
         for (let i = 1; i < lines.length; i++) {
+            // 空行をスキップ
+            if (lines[i].trim() === '') continue;
+            
             const values = lines[i].split(',');
             const entry = {};
             entry.question = values[0].trim().replace(/"/g, '');
             entry.options = values[1].trim().replace(/"/g, '').split('|');
             entry.answer = values[2].trim().replace(/"/g, '');
             entry.explanation = values[3].trim().replace(/"/g, '');
-            entry.hint = values[4] ? values[4].trim().replace(/"/g, '') : "この問題のヒントはありません。"; // ▼▼▼ 変更: hint列を読み込む
+            entry.hint = values[4] ? values[4].trim().replace(/"/g, '') : "この問題のヒントはありません。";
             data.push(entry);
         }
         return data;
@@ -56,10 +56,6 @@ async function loadQuizData() {
 // --- アプリケーションの初期化と開始 ---
 async function initializeApp() {
     versionInfo.textContent = APP_VERSION;
-    
-    // ▼▼▼ ヒントボタンにイベントリスナーを一度だけ設定 ▼▼▼
-    hintBtn.addEventListener('click', showHint);
-
     quizData = await loadQuizData();
     if (quizData.length > 0) {
         startQuiz();
@@ -79,12 +75,12 @@ function startQuiz() {
 }
 
 function showQuestion() {
+    const hintBtn = document.getElementById('hint-btn'); // ボタンの状態を直接操作するため都度取得
     feedbackText.textContent = '';
     explanationText.style.display = 'none';
-    nextBtn.style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
     optionsContainer.innerHTML = '';
     
-    // ▼▼▼ ヒント関連の表示をリセット ▼▼▼
     hintText.style.display = 'none';
     hintBtn.style.display = 'block';
     hintBtn.disabled = false;
@@ -95,17 +91,16 @@ function showQuestion() {
         const button = document.createElement('button');
         button.textContent = option;
         button.classList.add('option-btn');
-        button.addEventListener('click', () => selectAnswer(option));
+        // イベント委譲を使うので、ここではイベントリスナーを追加しない
         optionsContainer.appendChild(button);
     });
 }
 
-// ▼▼▼ ヒントを表示する新しい関数 ▼▼▼
 function showHint() {
     const currentQuestion = quizData[currentQuestionIndex];
     hintText.textContent = `ヒント: ${currentQuestion.hint}`;
     hintText.style.display = 'block';
-    hintBtn.disabled = true; // ヒントは1問につき1回だけ
+    document.getElementById('hint-btn').disabled = true; // ヒントは1問につき1回だけ
 }
 
 function selectAnswer(selectedOption) {
@@ -113,8 +108,7 @@ function selectAnswer(selectedOption) {
     const optionButtons = document.querySelectorAll('.option-btn');
     optionButtons.forEach(btn => btn.disabled = true);
     
-    // ▼▼▼ 回答を選んだらヒントボタンを隠す ▼▼▼
-    hintBtn.style.display = 'none';
+    document.getElementById('hint-btn').style.display = 'none';
 
     const isCorrect = selectedOption === currentQuestion.answer;
     feedbackText.textContent = isCorrect ? "✅ 正解！" : "❌ 不正解...";
@@ -125,17 +119,8 @@ function selectAnswer(selectedOption) {
     
     explanationText.textContent = currentQuestion.explanation;
     explanationText.style.display = 'block';
-    nextBtn.style.display = 'block';
+    document.getElementById('next-btn').style.display = 'block';
 }
-
-nextBtn.addEventListener('click', () => {
-    currentQuestionIndex++;
-    if (currentQuestionIndex < quizData.length) {
-        showQuestion();
-    } else {
-        showResult();
-    }
-});
 
 function generateResultsSummaryText() {
     let summary = `クイズの結果: ${score} / ${quizData.length} 正解！\n\n`;
@@ -164,26 +149,48 @@ function showResult() {
     });
 }
 
-// イベント委譲は resultContainer 内のボタンにのみ適用
+// --- イベント委譲 (Event Delegation) ---
+
+// クイズ中の操作（ヒント、回答、次の問題へ）
+quizContainer.addEventListener('click', (event) => {
+    // 選択肢ボタンがクリックされたかチェック
+    if (event.target.classList.contains('option-btn')) {
+        selectAnswer(event.target.textContent);
+        return; // 他の処理をしないように
+    }
+    // クリックされた要素のIDで処理を分岐
+    switch (event.target.id) {
+        case 'hint-btn':
+            showHint();
+            break;
+        case 'next-btn':
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizData.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+            break;
+    }
+});
+
+// 結果画面での操作（共有、コピー、メール、もう一度）
 resultContainer.addEventListener('click', (event) => {
-    const targetId = event.target.id;
+    const target = event.target;
     const summaryText = generateResultsSummaryText();
 
-    if (targetId === 'share-btn') {
+    if (target.id === 'share-btn') {
         if (navigator.share) {
-            navigator.share({ title: 'クイズの結果', text: summaryText, }).catch(error => console.log('Share failed:', error));
+            navigator.share({ title: 'クイズの結果', text: summaryText }).catch(error => console.log('Share failed:', error));
         } else {
             alert('お使いのブラウザは共有機能に対応していません。');
         }
-    }
-    if (targetId === 'copy-btn') {
+    } else if (target.id === 'copy-btn') {
         navigator.clipboard.writeText(summaryText).then(() => { copyFeedback.textContent = 'コピーしました！'; }).catch(err => { copyFeedback.textContent = 'コピーに失敗しました'; });
-    }
-    if (event.target.closest('#email-btn')) { // メールはaタグなので closest で判定
+    } else if (target.closest('#email-btn')) {
         const mailBody = encodeURIComponent(summaryText);
-        event.target.href = `mailto:?subject=クイズの結果&body=${mailBody}`;
-    }
-    if (targetId === 'retry-btn') {
+        target.href = `mailto:?subject=クイズの結果&body=${mailBody}`;
+    } else if (target.id === 'retry-btn') {
         startQuiz();
     }
 });
