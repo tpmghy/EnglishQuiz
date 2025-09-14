@@ -101,7 +101,7 @@ function parseCSV(text) {
 
 async function loadAllQuizData() {
     try {
-        const response = await fetch('quiz.csv', { cache: 'no-cache' });
+        const response = await fetch('https://english-quiz-app-i6m2.onrender.com', { ...  });
         if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
         const csvText = await response.text();
         const parsedData = parseCSV(csvText);
