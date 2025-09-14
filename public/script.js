@@ -1,5 +1,5 @@
 // script.js
-
+console.log("script.js is running! 🎤");
 const APP_VERSION = "v3.2 (Final Stable)";
 
 // 変数宣言
