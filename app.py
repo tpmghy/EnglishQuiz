@@ -18,7 +18,7 @@ else:
     # ローカルでテストする場合 (credentials.json を使う)
     gc = gspread.service_account(filename='credentials.json')
 
-SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID' # あなたのスプレッドシートIDに置き換えてください
+SPREADSHEET_ID = '15tejgT5aA67rR0XVQyM-tcwyQRhR9aNNjHUAMjGIXuo' # あなたのスプレッドシートIDに置き換えてください
 worksheet = gc.open_by_key(SPREADSHEET_ID).sheet1
 
 # --- 正解データをサーバーに読み込んでおく ---
