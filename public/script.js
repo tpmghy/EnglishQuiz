@@ -69,10 +69,10 @@ async function displayFileVersions(fileName) {
         const headers = { method: 'HEAD', cache: 'no-cache' };
         const htmlResponse = await fetch('index.html', headers);
         const cssResponse = await fetch('style.css', headers);
-        htmlVersionSpan.textContent = `HTML: ${new Date(htmlResponse.headers.get('Last-Modified')).toLocaleString('ja-JP')}`;
-        cssVersionSpan.textContent = `CSS: ${new Date(cssResponse.headers.get('Last-Modified')).toLocaleString('ja-JP')}`;
         const csvPath = fileName || 'quiz.csv';
         const csvResponse = await fetch(csvPath, headers);
+        htmlVersionSpan.textContent = `HTML: ${new Date(htmlResponse.headers.get('Last-Modified')).toLocaleString('ja-JP')}`;
+        cssVersionSpan.textContent = `CSS: ${new Date(cssResponse.headers.get('Last-Modified')).toLocaleString('ja-JP')}`;
         csvVersionSpan.textContent = `CSV: ${new Date(csvResponse.headers.get('Last-Modified')).toLocaleString('ja-JP')}`;
     } catch (error) { console.error("ファイルバージョンの取得に失敗:", error); }
 }
