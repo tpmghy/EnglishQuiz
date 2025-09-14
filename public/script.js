@@ -21,6 +21,8 @@ let hintWasViewedForCurrentQuestion = false;
 
 // DOMが完全に読み込まれてから、すべての処理を開始する
 window.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing app...');
+    
     // HTML要素の取得
     appVersionSpan = document.getElementById('app-version');
     htmlVersionSpan = document.getElementById('html-version');
@@ -48,32 +50,82 @@ window.addEventListener('DOMContentLoaded', () => {
     resumeMessage = document.getElementById('resume-message');
     newQuizContainer = document.getElementById('new-quiz-container');
 
+    // 要素の存在確認
+    if (!selectionContainer) {
+        console.error('selectionContainer not found');
+        return;
+    }
+    if (!quizContainer) {
+        console.error('quizContainer not found');
+        return;
+    }
+    if (!resultContainer) {
+        console.error('resultContainer not found');
+        return;
+    }
+
+    console.log('All elements found, starting initialization...');
     initializeApp();
 });
 
 async function initializeApp() {
+    console.log('Initializing app...');
     await displayFileVersions();
     allQuestions = await loadAllQuizData();
+    console.log('Loaded questions:', allQuestions.length);
+    
     if (allQuestions.length > 0) {
-        selectionContainer.addEventListener('click', handleSelectionScreenClick);
-        hintBtn.addEventListener('click', showHint);
-        nextBtn.addEventListener('click', handleNextButtonClick);
-        resultContainer.addEventListener('click', handleResultScreenClick);
+        console.log('Setting up event listeners...');
+        
+        // イベントリスナーの設定
+        if (selectionContainer) {
+            selectionContainer.addEventListener('click', handleSelectionScreenClick);
+            console.log('Selection container event listener added');
+        }
+        
+        if (hintBtn) {
+            hintBtn.addEventListener('click', showHint);
+            console.log('Hint button event listener added');
+        }
+        
+        if (nextBtn) {
+            nextBtn.addEventListener('click', handleNextButtonClick);
+            console.log('Next button event listener added');
+        }
+        
+        if (resultContainer) {
+            resultContainer.addEventListener('click', handleResultScreenClick);
+            console.log('Result container event listener added');
+        }
+        
         showSelectionScreen();
+        console.log('App initialization complete');
+    } else {
+        console.error('No questions loaded, app cannot start');
     }
 }
 
 async function displayFileVersions(fileName) {
-    appVersionSpan.textContent = `App: ${APP_VERSION}`;
+    if (appVersionSpan) {
+        appVersionSpan.textContent = `App: ${APP_VERSION}`;
+    }
+    
     try {
         const headers = { method: 'HEAD', cache: 'no-cache' };
         const htmlResponse = await fetch('index.html', headers);
         const cssResponse = await fetch('style.css', headers);
         const csvPath = fileName || 'quiz.csv';
         const csvResponse = await fetch(csvPath, headers);
-        htmlVersionSpan.textContent = `HTML: ${new Date(htmlResponse.headers.get('Last-Modified')).toLocaleString('ja-JP')}`;
-        cssVersionSpan.textContent = `CSS: ${new Date(cssResponse.headers.get('Last-Modified')).toLocaleString('ja-JP')}`;
-        csvVersionSpan.textContent = `CSV: ${new Date(csvResponse.headers.get('Last-Modified')).toLocaleString('ja-JP')}`;
+        
+        if (htmlVersionSpan) {
+            htmlVersionSpan.textContent = `HTML: ${new Date(htmlResponse.headers.get('Last-Modified')).toLocaleString('ja-JP')}`;
+        }
+        if (cssVersionSpan) {
+            cssVersionSpan.textContent = `CSS: ${new Date(cssResponse.headers.get('Last-Modified')).toLocaleString('ja-JP')}`;
+        }
+        if (csvVersionSpan) {
+            csvVersionSpan.textContent = `CSV: ${new Date(csvResponse.headers.get('Last-Modified')).toLocaleString('ja-JP')}`;
+        }
     } catch (error) { 
         console.error("ファイルバージョンの取得に失敗:", error); 
     }
@@ -154,6 +206,7 @@ async function loadAllQuizData() {
 }
 
 function showSelectionScreen() {
+    console.log('Showing selection screen...');
     const progress = loadProgress();
     if (progress && newQuizContainer) {
         newQuizContainer.style.display = 'none';
@@ -170,8 +223,11 @@ function showSelectionScreen() {
 }
 
 function startQuizForTopic(topic) {
+    console.log('Starting quiz for topic:', topic);
     currentTopic = topic;
     quizData = allQuestions.filter(question => question.topic === topic);
+    console.log('Filtered questions for topic:', quizData.length);
+    
     if (quizData.length > 0) {
         setTopicName(topic);
         selectionContainer.style.display = 'none';
@@ -182,16 +238,20 @@ function startQuizForTopic(topic) {
 }
 
 function startQuiz() {
+    console.log('Starting quiz...');
     currentQuestionIndex = 0;
     score = 0;
     sessionResults = [];
     quizContainer.style.display = 'block';
     resultContainer.style.display = 'none';
-    copyFeedback.textContent = '';
+    if (copyFeedback) {
+        copyFeedback.textContent = '';
+    }
     showQuestion();
 }
 
 function startReviewQuiz(reviewQuestions) {
+    console.log('Starting review quiz...');
     quizData = reviewQuestions;
     currentTopic = 'review';
     setTopicName(currentTopic);
@@ -199,17 +259,23 @@ function startReviewQuiz(reviewQuestions) {
 }
 
 function showQuestion() {
-    feedbackText.textContent = '';
-    explanationText.style.display = 'none';
-    nextBtn.style.display = 'none';
-    optionsContainer.innerHTML = '';
-    hintText.style.display = 'none';
-    hintBtn.style.display = 'block';
-    hintBtn.disabled = false;
+    console.log('Showing question:', currentQuestionIndex + 1);
+    
+    if (feedbackText) feedbackText.textContent = '';
+    if (explanationText) explanationText.style.display = 'none';
+    if (nextBtn) nextBtn.style.display = 'none';
+    if (optionsContainer) optionsContainer.innerHTML = '';
+    if (hintText) hintText.style.display = 'none';
+    if (hintBtn) {
+        hintBtn.style.display = 'block';
+        hintBtn.disabled = false;
+    }
     hintWasViewedForCurrentQuestion = false;
     
     const currentQuestion = quizData[currentQuestionIndex];
-    questionText.textContent = currentQuestion.question;
+    if (questionText) {
+        questionText.textContent = currentQuestion.question;
+    }
     updateProgress();
     
     currentQuestion.options.forEach(option => {
@@ -217,22 +283,31 @@ function showQuestion() {
         button.textContent = option;
         button.classList.add('option-btn');
         button.addEventListener('click', (event) => selectAnswer(option, event.target));
-        optionsContainer.appendChild(button);
+        if (optionsContainer) {
+            optionsContainer.appendChild(button);
+        }
     });
 }
 
 function showHint() {
+    console.log('Showing hint...');
     const currentQuestion = quizData[currentQuestionIndex];
-    hintText.innerHTML = addTranslationToText(currentQuestion.hint, currentQuestion.question);
-    hintText.style.display = 'block';
-    hintBtn.disabled = true;
+    if (hintText) {
+        hintText.innerHTML = addTranslationToText(currentQuestion.hint, currentQuestion.question);
+        hintText.style.display = 'block';
+    }
+    if (hintBtn) {
+        hintBtn.disabled = true;
+    }
     hintWasViewedForCurrentQuestion = true;
 }
 
 function selectAnswer(selectedOption, selectedButton) {
+    console.log('Answer selected:', selectedOption);
+    
     const optionButtons = document.querySelectorAll('.option-btn');
     optionButtons.forEach(btn => btn.disabled = true);
-    hintBtn.style.display = 'none';
+    if (hintBtn) hintBtn.style.display = 'none';
     selectedButton.classList.add('selected');
     
     setTimeout(() => {
@@ -248,8 +323,10 @@ function selectAnswer(selectedOption, selectedButton) {
             }
         });
         
-        feedbackText.textContent = isCorrect ? "✅ 正解！" : "❌ 不正解...";
-        feedbackText.style.color = isCorrect ? 'green' : 'red';
+        if (feedbackText) {
+            feedbackText.textContent = isCorrect ? "✅ 正解！" : "❌ 不正解...";
+            feedbackText.style.color = isCorrect ? 'green' : 'red';
+        }
         
         if (isCorrect) score++;
         
@@ -262,13 +339,18 @@ function selectAnswer(selectedOption, selectedButton) {
         });
         
         saveProgress();
-        explanationText.innerHTML = addTranslationToText(currentQuestion.explanation, currentQuestion.question);
-        explanationText.style.display = 'block';
-        nextBtn.style.display = 'block';
+        if (explanationText) {
+            explanationText.innerHTML = addTranslationToText(currentQuestion.explanation, currentQuestion.question);
+            explanationText.style.display = 'block';
+        }
+        if (nextBtn) {
+            nextBtn.style.display = 'block';
+        }
     }, 700);
 }
 
 function handleNextButtonClick() {
+    console.log('Next button clicked');
     currentQuestionIndex++;
     if (currentQuestionIndex < quizData.length) {
         showQuestion();
@@ -302,11 +384,12 @@ async function submitResultsToServer(results) {
 }
 
 function showResult() {
-    quizContainer.style.display = 'none';
-    resultContainer.style.display = 'block';
-    scoreText.textContent = score;
-    totalText.textContent = quizData.length;
-    detailedResultsList.innerHTML = '';
+    console.log('Showing result...');
+    if (quizContainer) quizContainer.style.display = 'none';
+    if (resultContainer) resultContainer.style.display = 'block';
+    if (scoreText) scoreText.textContent = score;
+    if (totalText) totalText.textContent = quizData.length;
+    if (detailedResultsList) detailedResultsList.innerHTML = '';
     
     sessionResults.forEach((result, index) => {
         const resultItem = document.createElement('div');
@@ -321,7 +404,9 @@ function showResult() {
         }
         
         resultItem.innerHTML = resultHTML;
-        detailedResultsList.appendChild(resultItem);
+        if (detailedResultsList) {
+            detailedResultsList.appendChild(resultItem);
+        }
     });
     
     const reviewQuestions = sessionResults
@@ -329,10 +414,12 @@ function showResult() {
         .map(result => allQuestions.find(q => q.question === result.question));
     const uniqueReviewQuestions = [...new Set(reviewQuestions)];
     
-    if (uniqueReviewQuestions.length > 0) {
-        reviewBtn.style.display = 'inline-block';
-    } else {
-        reviewBtn.style.display = 'none';
+    if (reviewBtn) {
+        if (uniqueReviewQuestions.length > 0) {
+            reviewBtn.style.display = 'inline-block';
+        } else {
+            reviewBtn.style.display = 'none';
+        }
     }
     
     submitResultsToServer(sessionResults);
@@ -340,9 +427,11 @@ function showResult() {
 }
 
 function handleSelectionScreenClick(event) {
+    console.log('Selection screen clicked:', event.target);
     const target = event.target;
     if (target.classList.contains('selection-btn')) {
         const topic = target.dataset.topic;
+        console.log('Topic selected:', topic);
         startQuizForTopic(topic);
     } else if (target.id === 'resume-btn') {
         const progress = loadProgress();
@@ -364,6 +453,7 @@ function handleSelectionScreenClick(event) {
 }
 
 function handleResultScreenClick(event) {
+    console.log('Result screen clicked:', event.target);
     const target = event.target;
     if (target.id === 'retry-btn') {
         clearProgress();
@@ -387,9 +477,9 @@ function handleResultScreenClick(event) {
             }
         } else if (target.id === 'copy-btn') {
             navigator.clipboard.writeText(summaryText).then(() => {
-                copyFeedback.textContent = 'コピーしました！';
+                if (copyFeedback) copyFeedback.textContent = 'コピーしました！';
             }).catch(err => {
-                copyFeedback.textContent = 'コピーに失敗しました';
+                if (copyFeedback) copyFeedback.textContent = 'コピーに失敗しました';
             });
         } else if (target.closest('#email-btn')) {
             const mailBody = encodeURIComponent(summaryText);
