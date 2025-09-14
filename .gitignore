@@ -1,0 +1,10 @@
+# Google Cloud credentials
+# このファイルは絶対に公開しないこと！
+credentials.json
+
+# Pythonが自動生成するキャッシュファイル
+__pycache__/
+
+# 仮想環境フォルダ (もし使っている場合)
+.venv/
+venv/
